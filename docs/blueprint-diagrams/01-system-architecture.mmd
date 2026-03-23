@@ -1,0 +1,29 @@
+flowchart LR
+    U[Users: SRE | Platform | CMDB Admin | Leadership]
+    FE[Experience Layer\nSearch + 3D Graph + Panels + Filters]
+    API[API Delivery Layer\nGraph | CI | Search | Health | ETL Status]
+    ORCH[Backend Orchestration\nValidation | Timing | Rate Control | Policy]
+    GRAPH[Graph Store\nCI Nodes + Directed Relationships]
+    CACHE[Cache Store\nNeighborhood + CI Detail + Search Results]
+    SEARCH[Search Index\nFast Retrieval + Facets]
+    ETL[ETL Pipeline\nFull Sync + Incremental Sync + Validation]
+    SNOW[ServiceNow CMDB\nCI + Relationship Source]
+    OBS[Observability\nLatency + Throughput + Health]
+    SEC[Security & Governance\nSecrets + Input Safety + Access Control]
+    DEVOPS[Local-First Operations\nCompose + Healthchecks + Volumes]
+
+    U --> FE
+    FE --> API
+    API --> ORCH
+    ORCH --> GRAPH
+    ORCH --> CACHE
+    ORCH --> SEARCH
+    ETL --> GRAPH
+    ETL --> SEARCH
+    SNOW --> ETL
+    ORCH --> OBS
+    ETL --> OBS
+    API --> SEC
+    ORCH --> SEC
+    API --> DEVOPS
+    ETL --> DEVOPS

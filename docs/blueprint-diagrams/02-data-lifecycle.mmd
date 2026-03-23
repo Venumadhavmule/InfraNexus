@@ -1,0 +1,17 @@
+flowchart TD
+    A[Start: ServiceNow Data Source]
+    B[Extract CI and Relationship Records]
+    C[Normalize Classes, Status, Environment]
+    D[Validate Identity and Required Fields]
+    E{Valid Record?}
+    F[Reject and Audit with Reason]
+    G[Load Graph Entities and Directed Edges]
+    H[Index Search Documents]
+    I[Update Freshness Bookmark]
+    J[Invalidate Affected Cache Segments]
+    K[Emit Sync Progress and Completion Events]
+    L[Serve Fresh Queries to Users]
+
+    A --> B --> C --> D --> E
+    E -- No --> F
+    E -- Yes --> G --> H --> I --> J --> K --> L
