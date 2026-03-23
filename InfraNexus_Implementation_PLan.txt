@@ -1,0 +1,259 @@
+═══════════════════════════════════════════════════════════════════════════════════════
+         SERVICENOW CMDB GRAPH VISUALIZER — COMPLETE IMPLEMENTATION PROMPT
+         Full-Stack | Production-Grade | 1M+ CI Scale | GitNexus-Style
+═══════════════════════════════════════════════════════════════════════════════════════
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 0 — PRODUCT VISION & CONSTRAINTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Build a production-grade ServiceNow CMDB Graph Visualizer — a full-stack application
+that renders Configuration Items (CIs) and their relationships as an interactive 3D
+WebGL force-directed graph, inspired by GitNexus (gitnexus.vercel.app).
+
+KEY CONSTRAINTS:
+  - Must support 1,000,000+ CIs without degradation
+  - NEVER load full graph to frontend — always subgraph by neighborhood
+  - Cold start to first meaningful render < 2 seconds
+  - k-hop neighborhood query < 100ms at 1M scale
+  - Incremental sync from ServiceNow (not full re-index every time)
+  - Offline-capable for last loaded subgraph
+  - Must run on a single developer machine (local-first)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 1 — MONOREPO DIRECTORY STRUCTURE (CREATE EXACTLY THIS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+cmdb-graph/
+├── docker-compose.yml
+├── docker-compose.prod.yml
+├── .env.example
+├── .env.local
+├── README.md
+├── Makefile
+│
+├── backend/                          # FastAPI Python backend
+│   ├── Dockerfile
+│   ├── pyproject.toml
+│   ├── requirements.txt
+│   ├── requirements-dev.txt
+│   ├── alembic.ini                   # DB migrations (metadata store)
+│   │
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py                   # FastAPI app entry + lifespan
+│   │   ├── config.py                 # Pydantic Settings
+│   │   ├── dependencies.py           # DI: kuzu conn, redis, meili
+│   │   │
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   ├── kuzu_manager.py       # Kuzu DB connection pool + schema bootstrap
+│   │   │   ├── redis_manager.py      # Redis connection + cache helpers
+│   │   │   ├── meili_manager.py      # Meilisearch client + index bootstrap
+│   │   │   └── exceptions.py         # Custom exception classes
+│   │   │
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── ci.py                 # Pydantic CI models (request/response)
+│   │   │   ├── graph.py              # GraphNode, GraphEdge, GraphResponse
+│   │   │   ├── search.py             # SearchResult, SearchResponse
+│   │   │   └── etl.py                # ETL status, job models
+│   │   │
+│   │   ├── routers/
+│   │   │   ├── __init__.py
+│   │   │   ├── graph.py              # /api/neighborhood, /api/clusters, /api/path
+│   │   │   ├── ci.py                 # /api/ci/{id}, /api/ci/{id}/timeline
+│   │   │   ├── search.py             # /api/search, /api/suggest
+│   │   │   ├── etl.py                # /api/etl/sync, /api/etl/status, /api/etl/logs
+│   │   │   └── health.py             # /health, /ready, /metrics
+│   │   │
+│   │   ├── services/
+│   │   │   ├── __init__.py
+│   │   │   ├── graph_service.py      # Business logic: neighborhood, path, clusters
+│   │   │   ├── ci_service.py         # CI detail, history, related CIs
+│   │   │   ├── search_service.py     # Meili search + Kuzu graph hydration
+│   │   │   ├── cache_service.py      # Redis cache strategy: read-through / write-behind
+│   │   │   └── layout_service.py     # Server-side layout pre-compute for large clusters
+│   │   │
+│   │   └── middleware/
+│   │       ├── __init__.py
+│   │       ├── rate_limit.py         # Per-IP rate limiting via Redis sliding window
+│   │       ├── request_id.py         # X-Request-ID injection
+│   │       └── timing.py             # Server-Timing header injection
+│   │
+│   └── etl/
+│       ├── __init__.py
+│       ├── runner.py                 # CLI entrypoint: full / incremental / class
+│       ├── snow_client.py            # ServiceNow REST client (pagination, retry, auth)
+│       ├── kuzu_loader.py            # Batch COPY loader into Kuzu
+│       ├── meili_indexer.py          # Batch index into Meilisearch
+│       ├── transformer.py            # Raw Snow record → canonical CI/Rel model
+│       ├── validators.py             # Data quality checks on raw records
+│       ├── state_manager.py          # Sync state in Redis: last_sync, progress
+│       └── scheduler.py             # APScheduler for incremental auto-sync
+│
+├── frontend/                         # Next.js 14 TypeScript frontend
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── next.config.mjs
+│   ├── tailwind.config.ts
+│   ├── postcss.config.mjs
+│   │
+│   ├── public/
+│   │   └── favicon.ico
+│   │
+│   └── src/
+│       ├── app/
+│       │   ├── layout.tsx
+│       │   ├── page.tsx              # Root: redirects to /graph
+│       │   ├── graph/
+│       │   │   └── page.tsx          # Main graph page
+│       │   └── api/                  # Next.js route handlers (proxy to backend)
+│       │       ├── neighborhood/route.ts
+│       │       ├── search/route.ts
+│       │       └── ci/[id]/route.ts
+│       │
+│       ├── components/
+│       │   ├── graph/
+│       │   │   ├── CMDBGraph.tsx     # Main 3D force graph wrapper
+│       │   │   ├── GraphCanvas.tsx   # ForceGraph3D canvas + camera control
+│       │   │   ├── NodeObject.tsx    # Custom THREE.js node mesh factory
+│       │   │   ├── EdgeObject.tsx    # Custom link rendering
+│       │   │   ├── ClusterView.tsx   # Top-level cluster bubble view
+│       │   │   ├── MiniMap.tsx       # 2D overview minimap
+│       │   │   └── GraphStats.tsx    # Node/edge count badges
+│       │   │
+│       │   ├── panels/
+│       │   │   ├── LeftPanel.tsx     # Sidebar: legend + filters + inspector
+│       │   │   ├── CIInspector.tsx   # Selected CI details panel
+│       │   │   ├── RelationshipList.tsx # Incoming/outgoing relationships
+│       │   │   ├── CITimeline.tsx    # Change history for selected CI
+│       │   │   └── RightPanel.tsx    # Zoom, reset, layout controls
+│       │   │
+│       │   ├── search/
+│       │   │   ├── SearchBar.tsx     # Top-center search with autocomplete
+│       │   │   ├── SearchResults.tsx # Dropdown results
+│       │   │   └── SearchFilters.tsx # Filter by class, env, status
+│       │   │
+│       │   ├── controls/
+│       │   │   ├── HopDepthControl.tsx   # 1/2/3 hop selector
+│       │   │   ├── NodeTypeFilter.tsx    # Toggle CI class visibility
+│       │   │   ├── EdgeTypeFilter.tsx    # Toggle relationship type visibility
+│       │   │   ├── LayoutSelector.tsx    # force3d / dagre / radial
+│       │   │   └── ThemeToggle.tsx       # dark / light
+│       │   │
+│       │   └── ui/                   # shadcn/ui primitives
+│       │       ├── button.tsx
+│       │       ├── badge.tsx
+│       │       ├── tooltip.tsx
+│       │       ├── skeleton.tsx
+│       │       └── toaster.tsx
+│       │
+│       ├── hooks/
+│       │   ├── useGraph.ts           # Graph state machine (loading, merging, reset)
+│       │   ├── useSearch.ts          # Debounced search + autocomplete
+│       │   ├── useCI.ts              # CI detail fetcher with SWR
+│       │   ├── useNeighborhood.ts    # Neighborhood fetcher + merge
+│       │   ├── useCamera.ts          # Camera animation helpers
+│       │   ├── useKeyboard.ts        # Keyboard shortcuts (Esc, /, arrows)
+│       │   └── useWebSocket.ts       # WS connection for real-time ETL updates
+│       │
+│       ├── store/
+│       │   ├── graphStore.ts         # Zustand: nodes, links, selected, filters
+│       │   ├── uiStore.ts            # Zustand: panel state, hop depth, layout
+│       │   └── etlStore.ts           # Zustand: ETL job status, progress
+│       │
+│       ├── lib/
+│       │   ├── api.ts                # Typed fetch client (all API calls)
+│       │   ├── graphMerge.ts         # Merge new neighborhood into existing graph
+│       │   ├── colorMap.ts           # CI class → color mapping
+│       │   ├── sizeMap.ts            # CI importance → node size
+│       │   ├── layout.ts             # Client-side layout helpers
+│       │   └── constants.ts          # Shared constants
+│       │
+│       └── types/
+│           ├── ci.ts                 # CI type definitions
+│           ├── graph.ts              # GraphNode, GraphLink types
+│           └── api.ts                # API response types
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2 — INFRASTRUCTURE & DOCKER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CREATE docker-compose.yml:
+```yaml
+version: "3.9"
+services:
+
+  backend:
+    build: ./backend
+    ports: ["8000:8000"]
+    volumes:
+      - ./backend:/app
+      - kuzu_data:/app/data/kuzu
+    environment:
+      - KUZU_DB_PATH=/app/data/kuzu
+      - REDIS_URL=redis://redis:6379
+      - MEILI_URL=http://meilisearch:7700
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+      - SNOW_INSTANCE=${SNOW_INSTANCE}
+      - SNOW_USERNAME=${SNOW_USERNAME}
+      - SNOW_PASSWORD=${SNOW_PASSWORD}
+      - LOG_LEVEL=INFO
+    depends_on:
+      redis:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports: ["3000:3000"]
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8000
+    depends_on: [backend]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.2-alpine
+    ports: ["6379:6379"]
+    volumes: [redis_data:/data]
+    command: >
+      redis-server
+      --maxmemory 2gb
+      --maxmemory-policy allkeys-lru
+      --save 60 1000
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+    restart: unless-stopped
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.6
+    ports: ["7700:7700"]
+    volumes: [meili_data:/meili_data]
+    environment:
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+      - MEILI_ENV=development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      retries: 5
+    restart: unless-stopped
+
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    ports: ["8001:8001"]
+    depends_on: [redis]
+
+volumes:
+  kuzu_data:
+  redis_data:
+  meili_data:
+```
+
+CREATE .env.example:
