@@ -7,7 +7,7 @@ import { WS_BASE_URL, WS_RECONNECT_DELAY_MS, WS_MAX_RECONNECT_ATTEMPTS } from "@
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectCount = useRef(0);
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleWSEvent = useETLStore((s) => s.handleWSEvent);
 
   const connect = useCallback(() => {
@@ -48,7 +48,9 @@ export function useWebSocket() {
   }, [handleWSEvent]);
 
   const disconnect = useCallback(() => {
-    clearTimeout(reconnectTimer.current);
+    if (reconnectTimer.current) {
+      clearTimeout(reconnectTimer.current);
+    }
     reconnectCount.current = WS_MAX_RECONNECT_ATTEMPTS; // Prevent reconnection
     wsRef.current?.close();
     wsRef.current = null;

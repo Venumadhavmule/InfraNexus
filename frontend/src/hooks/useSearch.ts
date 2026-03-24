@@ -16,13 +16,14 @@ export function useSearch() {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [offset, setOffset] = useState(0);
 
-  const suggestTimer = useRef<ReturnType<typeof setTimeout>>();
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+  const suggestTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounced suggestions
   const updateQuery = useCallback((q: string) => {
     setQuery(q);
-    clearTimeout(suggestTimer.current);
+    if (suggestTimer.current) {
+      clearTimeout(suggestTimer.current);
+    }
 
     if (q.trim().length < 2) {
       setSuggestions([]);
@@ -86,8 +87,9 @@ export function useSearch() {
   // Clean up timers
   useEffect(() => {
     return () => {
-      clearTimeout(suggestTimer.current);
-      clearTimeout(searchTimer.current);
+      if (suggestTimer.current) {
+        clearTimeout(suggestTimer.current);
+      }
     };
   }, []);
 

@@ -1,7 +1,11 @@
 "use client";
 
 import { useRef, useCallback, useEffect, useState } from "react";
-import ForceGraph3D, { type ForceGraphMethods } from "react-force-graph-3d";
+import ForceGraph3D, {
+  type ForceGraphMethods,
+  type LinkObject,
+  type NodeObject,
+} from "react-force-graph-3d";
 import type { GraphNode, GraphLink } from "@/types";
 import { useGraphStore } from "@/store/graphStore";
 import { useUIStore } from "@/store/uiStore";
@@ -25,7 +29,9 @@ import SpriteText from "three-spritetext";
 import * as THREE from "three";
 
 export function GraphCanvas() {
-  const graphRef = useRef<ForceGraphMethods<GraphNode, GraphLink>>(null);
+  const graphRef = useRef<
+    ForceGraphMethods<NodeObject<GraphNode>, LinkObject<GraphNode, GraphLink>> | undefined
+  >(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 

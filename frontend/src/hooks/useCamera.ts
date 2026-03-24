@@ -1,17 +1,20 @@
 "use client";
 
-import { useCallback, useRef } from "react";
-import type { GraphNode } from "@/types";
+import { useCallback } from "react";
+import type {
+  ForceGraphMethods,
+  LinkObject,
+  NodeObject,
+} from "react-force-graph-3d";
+import type { GraphLink, GraphNode } from "@/types";
 import { CAMERA_FLY_DURATION_MS } from "@/lib/constants";
 
-type ForceGraphRef = {
-  cameraPosition: (pos: { x: number; y: number; z: number }, lookAt?: { x: number; y: number; z: number }, ms?: number) => void;
-  centerAt: (x?: number, y?: number, ms?: number) => void;
-  zoomToFit: (ms?: number, padding?: number) => void;
-  d3ReheatSimulation: () => void;
-};
+type ForceGraphRef = Pick<
+  ForceGraphMethods<NodeObject<GraphNode>, LinkObject<GraphNode, GraphLink>>,
+  "cameraPosition" | "zoomToFit" | "d3ReheatSimulation"
+>;
 
-export function useCamera(graphRef: React.RefObject<ForceGraphRef | null>) {
+export function useCamera(graphRef: React.RefObject<ForceGraphRef | undefined>) {
   const flyToNode = useCallback(
     (node: GraphNode) => {
       const fg = graphRef.current;
