@@ -1,6 +1,6 @@
 # InfraNexus Backend
 
-FastAPI backend for the ServiceNow CMDB Graph Visualizer.
+FastAPI application serving the InfraNexus CMDB Graph API. Powered by Kuzu (embedded graph database), Meilisearch (full-text search), and Redis (caching).
 
 ## Architecture
 
