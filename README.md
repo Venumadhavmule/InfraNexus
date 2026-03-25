@@ -2,6 +2,11 @@
 
 **ServiceNow CMDB Graph Visualizer** — Ingest 1M+ Configuration Items from ServiceNow, store them in a graph database, and explore relationships as an interactive real-time 3D force-directed graph.
 
+<img width="1710" height="874" alt="{F4A727CF-0229-4D4C-B31A-30E08AE8FE2D}" src="https://github.com/user-attachments/assets/6ccaa495-2c03-43fe-bd3e-9cf03bf19706" />
+
+
+
+
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │                          InfraNexus                                  │
