@@ -101,7 +101,7 @@ export async function fetchNeighborhood(
     for (const e of opts.envFilter) params.append("env", e);
   }
   const qs = params.toString();
-  return request<NeighborhoodResponse>(`/graph/neighborhood/${ciId}${qs ? `?${qs}` : ""}`);
+  return request<NeighborhoodResponse>(`/api/graph/neighborhood/${ciId}${qs ? `?${qs}` : ""}`);
 }
 
 export async function fetchPath(
@@ -109,15 +109,15 @@ export async function fetchPath(
   targetId: string,
   maxDepth = 5,
 ): Promise<PathResponse> {
-  return request<PathResponse>(`/graph/path/${sourceId}/${targetId}?max_depth=${maxDepth}`);
+  return request<PathResponse>(`/api/graph/path/${sourceId}/${targetId}?max_length=${maxDepth}`);
 }
 
 export async function fetchClusters(): Promise<ClustersResponse> {
-  return request<ClustersResponse>("/graph/clusters");
+  return request<ClustersResponse>("/api/graph/clusters");
 }
 
 export async function fetchGraphStats(): Promise<GraphStatsResponse> {
-  return request<GraphStatsResponse>("/graph/stats");
+  return request<GraphStatsResponse>("/api/graph/stats");
 }
 
 // ── Search Endpoints ───────────────────────────────────────
@@ -129,37 +129,37 @@ export async function search(
   offset = 0,
 ): Promise<SearchResponse> {
   const params = new URLSearchParams({ q: query, limit: String(limit), offset: String(offset) });
-  if (filters.ciClass) params.set("ci_class", filters.ciClass);
-  if (filters.environment) params.set("environment", filters.environment);
-  if (filters.status !== undefined) params.set("operational_status", String(filters.status));
-  return request<SearchResponse>(`/search?${params}`);
+  if (filters.ciClass) params.append("class", filters.ciClass);
+  if (filters.environment) params.append("env", filters.environment);
+  if (filters.status !== undefined) params.append("status", String(filters.status));
+  return request<SearchResponse>(`/api/search?${params}`);
 }
 
 export async function suggest(query: string, limit = 8): Promise<SuggestResponse> {
-  return request<SuggestResponse>(`/search/suggest?q=${encodeURIComponent(query)}&limit=${limit}`);
+  return request<SuggestResponse>(`/api/search/suggest?q=${encodeURIComponent(query)}&limit=${limit}`);
 }
 
 // ── CI Endpoints ───────────────────────────────────────────
 
 export async function fetchCI(ciId: string): Promise<CIDetail> {
-  return request<CIDetail>(`/ci/${ciId}`);
+  return request<CIDetail>(`/api/ci/${ciId}`);
 }
 
 export async function fetchCITimeline(ciId: string): Promise<CITimelineResponse> {
-  return request<CITimelineResponse>(`/ci/${ciId}/timeline`);
+  return request<CITimelineResponse>(`/api/ci/${ciId}/timeline`);
 }
 
 // ── ETL Endpoints ──────────────────────────────────────────
 
 export async function triggerSync(type: SyncType = "incremental"): Promise<SyncTriggerResponse> {
-  return request<SyncTriggerResponse>("/etl/sync", {
+  return request<SyncTriggerResponse>("/api/etl/sync", {
     method: "POST",
     body: JSON.stringify({ type }),
   });
 }
 
 export async function fetchETLStatus(): Promise<ETLStatusResponse> {
-  return request<ETLStatusResponse>("/etl/status");
+  return request<ETLStatusResponse>("/api/etl/status");
 }
 
 // ── Health Endpoints ───────────────────────────────────────
