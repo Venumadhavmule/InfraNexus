@@ -46,6 +46,10 @@ class ETLRunner:
         try:
             await self._broadcast("sync_started", {"sync_id": sync_id, "type": "full"})
 
+            # 0. Reset tables to ensure a clean full sync (handles re-runs)
+            await self._broadcast("sync_progress", {"stage": "resetting_tables"})
+            await self._loader.reset_for_full_sync()
+
             # 1. Fetch relationship types
             await self._broadcast("sync_progress", {"stage": "fetching_rel_types"})
             rel_types = await self._snow.fetch_rel_types()
