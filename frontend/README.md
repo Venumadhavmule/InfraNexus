@@ -2,13 +2,27 @@
 
 Next.js 16 + React 19 application that renders ServiceNow CMDB data as an interactive 3D WebGL force-directed graph. Visualizes up to 2000 nodes using `react-force-graph-3d` and Three.js.
 
+## Prerequisites
+
+- Node.js 20+
+- npm 10+
+- InfraNexus backend running on port 8000 (see `backend/README.md`)
+
 ## Quick Start
 
 ```bash
 cd frontend
+
+# Install dependencies
 npm install
-cp .env.example .env.local   # configure API/WS URLs
-npm run dev                  # http://localhost:3000
+
+# Configure environment
+cp .env.example .env.local
+# Edit .env.local if your backend runs on a different host/port
+
+# Start dev server
+npm run dev
+# → http://localhost:3000
 ```
 
 Or via Docker Compose from the repo root:
@@ -16,6 +30,31 @@ Or via Docker Compose from the repo root:
 ```bash
 docker compose up frontend
 ```
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Backend API base URL (no trailing slash) |
+| `NEXT_PUBLIC_WS_URL` | `ws://localhost:8000` | WebSocket base URL (no trailing slash) |
+
+`.env.local` example:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_WS_URL=ws://localhost:8000
+```
+
+## Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server with hot reload |
+| `npm run build` | Production build |
+| `npm run start` | Run production build |
+| `npm run lint` | Run ESLint |
+| `npm test` | Run all tests once (vitest) |
+| `npm run test:watch` | Run tests in watch mode |
 
 ## Architecture
 
@@ -139,13 +178,6 @@ Prevents the graph from "teleporting" when neighbour data is refreshed.
 |----------|---------|-------------|
 | `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Backend API base URL |
 | `NEXT_PUBLIC_WS_URL` | `ws://localhost:8000` | WebSocket base URL |
-
-Create `frontend/.env.example`:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_WS_URL=ws://localhost:8000
-```
 
 ## Performance Budgets
 

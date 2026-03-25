@@ -65,8 +65,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     # --- WebSocket manager ---
     app.state.ws_manager = ConnectionManager()
 
-    # --- ETL (only when all services are enabled) ---
-    if settings.ETL_ENABLED and settings.KUZU_ENABLED and settings.REDIS_ENABLED and settings.MEILI_ENABLED:
+    # --- ETL (requires Kuzu; uses stubs for Redis/Meili when disabled) ---
+    if settings.ETL_ENABLED and settings.KUZU_ENABLED:
         from etl.state_manager import ETLStateManager
         from etl.runner import ETLRunner
         from etl.scheduler import ETLScheduler

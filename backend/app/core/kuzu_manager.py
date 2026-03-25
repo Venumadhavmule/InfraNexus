@@ -51,7 +51,7 @@ CREATE REL TABLE IF NOT EXISTS RELATES_TO(
 class KuzuManager:
     def __init__(self, db_path: str) -> None:
         self._db_path = Path(db_path)
-        self._db_path.mkdir(parents=True, exist_ok=True)
+        self._db_path.parent.mkdir(parents=True, exist_ok=True)
         self._db = kuzu.Database(str(self._db_path))
         self._write_lock = asyncio.Lock()
         self._reader_pool: asyncio.Queue[kuzu.Connection] = asyncio.Queue(maxsize=4)
@@ -66,6 +66,15 @@ class KuzuManager:
             self._writer.execute(_REL_TABLE_DDL)
         log.info("kuzu_manager.schema_bootstrapped")
 
+    async def reset_schema(self) -> None:
+        """Drop and recreate tables. Called before a full ETL sync to start clean."""
+        async with self._write_lock:
+            self._writer.execute("DROP TABLE IF EXISTS RELATES_TO")
+            self._writer.execute("DROP TABLE IF EXISTS CI")
+            self._writer.execute(_CI_TABLE_DDL)
+            self._writer.execute(_REL_TABLE_DDL)
+        log.info("kuzu_manager.schema_reset")
+
     async def read_query(self, cypher: str, params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         conn = await self._reader_pool.get()
         try:
@@ -79,7 +88,8 @@ class KuzuManager:
             await asyncio.to_thread(self._execute, self._writer, cypher, params or {})
 
     async def bulk_copy(self, table: str, csv_path: Path) -> None:
-        cypher = f'COPY {table} FROM "{csv_path.as_posix()}"'
+        # PARALLEL=FALSE is required when CSV fields may contain quoted newlines.
+        cypher = f'COPY {table} FROM "{csv_path.as_posix()}" (HEADER=TRUE, PARALLEL=FALSE)'
         async with self._write_lock:
             await asyncio.to_thread(self._writer.execute, cypher)
         log.info("kuzu_manager.bulk_copy_complete", table=table, path=str(csv_path))

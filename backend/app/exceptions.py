@@ -167,6 +167,7 @@ async def infranexus_error_handler(request: Request, exc: InfraNexusError) -> JS
 
 
 async def validation_error_handler(request: Request, exc: ValidationError) -> JSONResponse:
+    log.warning("validation_error", errors=exc.errors(), url=str(request.url))
     resp = ErrorResponse(
         detail="Validation error",
         type="validation_error",

@@ -48,9 +48,10 @@ def get_ci_service(
 
 def get_search_service(
     meili: MeiliManager = Depends(get_meili),
+    kuzu: KuzuManager = Depends(get_kuzu),
     cache: CacheService = Depends(get_cache_service),
 ) -> SearchService:
-    return SearchService(meili, cache)
+    return SearchService(meili, kuzu, cache)
 
 
 def get_etl_state_manager(request: Request) -> object:
