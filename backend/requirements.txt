@@ -1,0 +1,21 @@
+# Auto-generated from pyproject.toml [project.dependencies]
+# To regenerate: pip-compile pyproject.toml -o requirements.txt
+# Or simply: pip install -e ".[dev]"
+
+# === Core ===
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+httpx>=0.28.0
+structlog>=24.4.0
+msgpack>=1.1.0
+orjson>=3.10.0
+websockets>=14.0
+networkx>=3.4.0
+
+# === External Services (optional — disabled by default) ===
+kuzu>=0.7.0
+redis[hiredis]>=5.2.0
+meilisearch-python-sdk>=3.8.0
+apscheduler>=3.10.0

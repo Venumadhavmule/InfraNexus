@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.dependencies import get_etl_runner, get_etl_state_manager
 from app.exceptions import ETLAlreadyRunningError
@@ -30,6 +30,9 @@ async def trigger_sync(
     state_mgr: Annotated[object, Depends(get_etl_state_manager)],
     runner: Annotated[object, Depends(get_etl_runner)],
 ) -> SyncTriggerResponse:
+    if state_mgr is None or runner is None:
+        raise HTTPException(status_code=503, detail="ETL is disabled. Set ETL_ENABLED=true to enable.")
+
     from etl.state_manager import ETLStateManager
     from etl.runner import ETLRunner
 
@@ -65,6 +68,9 @@ async def trigger_sync(
 async def get_status(
     state_mgr: Annotated[object, Depends(get_etl_state_manager)],
 ) -> ETLStatusResponse:
+    if state_mgr is None:
+        return ETLStatusResponse(status=SyncStatus.idle)
+
     from etl.state_manager import ETLStateManager
     assert isinstance(state_mgr, ETLStateManager)
 

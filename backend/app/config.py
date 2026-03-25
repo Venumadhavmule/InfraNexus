@@ -9,6 +9,12 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    # === Feature Toggles ===
+    KUZU_ENABLED: bool = False
+    REDIS_ENABLED: bool = False
+    MEILI_ENABLED: bool = False
+    ETL_ENABLED: bool = False
+
     # Kuzu
     KUZU_DB_PATH: str = "./data/kuzu"
 

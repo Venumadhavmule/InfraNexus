@@ -8,9 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 
 from app.config import settings
-from app.core.kuzu_manager import KuzuManager
-from app.core.meili_manager import MeiliManager
-from app.core.redis_manager import RedisManager
+from app.core.stubs import StubKuzuManager, StubMeiliManager, StubRedisManager
 from app.core.ws_manager import ConnectionManager
 from app.exceptions import (
     InfraNexusError,
@@ -32,52 +30,81 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     setup_logging()
     log.info("app.starting")
 
-    # Kuzu
-    kuzu = KuzuManager(settings.KUZU_DB_PATH)
-    await kuzu.bootstrap_schema()
+    # --- Kuzu ---
+    if settings.KUZU_ENABLED:
+        from app.core.kuzu_manager import KuzuManager
+        kuzu = KuzuManager(settings.KUZU_DB_PATH)
+        await kuzu.bootstrap_schema()
+    else:
+        kuzu = StubKuzuManager(settings.KUZU_DB_PATH)  # type: ignore[assignment]
+        await kuzu.bootstrap_schema()
     app.state.kuzu = kuzu
 
-    # Redis
-    redis = RedisManager(settings.REDIS_URL)
-    await redis.connect()
+    # --- Redis ---
+    if settings.REDIS_ENABLED:
+        from app.core.redis_manager import RedisManager
+        redis = RedisManager(settings.REDIS_URL)
+        await redis.connect()
+    else:
+        redis = StubRedisManager(settings.REDIS_URL)  # type: ignore[assignment]
+        await redis.connect()
     app.state.redis = redis
 
-    # Meilisearch
-    meili = MeiliManager(settings.MEILI_URL, settings.MEILI_MASTER_KEY)
-    await meili.connect()
-    await meili.bootstrap_index()
+    # --- Meilisearch ---
+    if settings.MEILI_ENABLED:
+        from app.core.meili_manager import MeiliManager
+        meili = MeiliManager(settings.MEILI_URL, settings.MEILI_MASTER_KEY)
+        await meili.connect()
+        await meili.bootstrap_index()
+    else:
+        meili = StubMeiliManager(settings.MEILI_URL, settings.MEILI_MASTER_KEY)  # type: ignore[assignment]
+        await meili.connect()
+        await meili.bootstrap_index()
     app.state.meili = meili
 
-    # WebSocket manager
+    # --- WebSocket manager ---
     app.state.ws_manager = ConnectionManager()
 
-    # ETL (lazy import to avoid circular deps)
-    from etl.state_manager import ETLStateManager
-    from etl.runner import ETLRunner
-    from etl.scheduler import ETLScheduler
+    # --- ETL (only when all services are enabled) ---
+    if settings.ETL_ENABLED and settings.KUZU_ENABLED and settings.REDIS_ENABLED and settings.MEILI_ENABLED:
+        from etl.state_manager import ETLStateManager
+        from etl.runner import ETLRunner
+        from etl.scheduler import ETLScheduler
+        from etl.snow_client import SnowClient
 
-    state_mgr = ETLStateManager(redis)
-    app.state.etl_state_manager = state_mgr
+        state_mgr = ETLStateManager(redis)
+        app.state.etl_state_manager = state_mgr
 
-    from etl.snow_client import SnowClient
+        snow = SnowClient(settings.SNOW_INSTANCE, settings.SNOW_USERNAME, settings.SNOW_PASSWORD)
+        runner = ETLRunner(
+            snow=snow, kuzu=kuzu, meili=meili, redis=redis,
+            state_mgr=state_mgr, ws_manager=app.state.ws_manager,
+        )
+        app.state.etl_runner = runner
 
-    snow = SnowClient(settings.SNOW_INSTANCE, settings.SNOW_USERNAME, settings.SNOW_PASSWORD)
-    runner = ETLRunner(
-        snow=snow, kuzu=kuzu, meili=meili, redis=redis,
-        state_mgr=state_mgr, ws_manager=app.state.ws_manager,
+        scheduler = ETLScheduler(runner, state_mgr, settings.ETL_SYNC_INTERVAL_MIN)
+        await scheduler.start()
+        app.state.etl_scheduler = scheduler
+    else:
+        app.state.etl_state_manager = None
+        app.state.etl_runner = None
+        app.state.etl_scheduler = None
+        if not settings.ETL_ENABLED:
+            log.info("app.etl_disabled")
+
+    log.info(
+        "app.started",
+        kuzu_enabled=settings.KUZU_ENABLED,
+        redis_enabled=settings.REDIS_ENABLED,
+        meili_enabled=settings.MEILI_ENABLED,
+        etl_enabled=settings.ETL_ENABLED,
     )
-    app.state.etl_runner = runner
-
-    scheduler = ETLScheduler(runner, state_mgr, settings.ETL_SYNC_INTERVAL_MIN)
-    await scheduler.start()
-    app.state.etl_scheduler = scheduler
-
-    log.info("app.started")
     yield
 
     # Shutdown
     log.info("app.shutting_down")
-    await scheduler.stop()
+    if app.state.etl_scheduler is not None:
+        await app.state.etl_scheduler.stop()
     await meili.disconnect()
     await redis.disconnect()
     await kuzu.close()
