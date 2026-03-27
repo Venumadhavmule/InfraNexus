@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useEffect, useState } from "react";
+import { useRef, useCallback, useEffect, useMemo, useState } from "react";
 import ForceGraph3D, {
   type ForceGraphMethods,
   type LinkObject,
@@ -32,16 +32,20 @@ export function GraphCanvas() {
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
   const selectedNodeId = useGraphStore((s) => s.selectedNodeId);
+  const centerId = useGraphStore((s) => s.centerId);
   const selectNode = useGraphStore((s) => s.selectNode);
   const hoverNode = useGraphStore((s) => s.hoverNode);
   const pathHighlight = useGraphStore((s) => s.pathHighlight);
 
+  const layoutMode = useUIStore((s) => s.layoutMode);
+  const theme = useUIStore((s) => s.theme);
   const showLabels = useUIStore((s) => s.showLabels);
   const showParticles = useUIStore((s) => s.showParticles);
 
   const { filteredNodes, filteredEdges } = useGraphFilters();
   const { flyToNode, resetCamera, zoomToFit } = useCamera(graphRef);
   const { expandNode } = useNeighborhood();
+  const objectCacheRef = useRef<Map<string, THREE.Group>>(new Map());
 
   useKeyboardNav({
     onResetCamera: resetCamera,
@@ -75,6 +79,73 @@ export function GraphCanvas() {
     if (node) flyToNode(node);
   }, [selectedNodeId, flyToNode]);
 
+  const pathSet = useMemo(() => new Set(pathHighlight), [pathHighlight]);
+  const visibleNodeIds = useMemo(() => new Set(filteredNodes.map((node) => node.id)), [filteredNodes]);
+  const graphData = useMemo(
+    () => ({
+      nodes: filteredNodes,
+      links: filteredEdges,
+    }),
+    [filteredEdges, filteredNodes],
+  );
+  const depthMap = useMemo(
+    () => buildDepthMap(centerId, filteredNodes, filteredEdges),
+    [centerId, filteredEdges, filteredNodes],
+  );
+
+  useEffect(() => {
+    const cache = objectCacheRef.current;
+    for (const [nodeId, object] of cache.entries()) {
+      if (!visibleNodeIds.has(nodeId)) {
+        disposeObject3D(object);
+        cache.delete(nodeId);
+      }
+    }
+  }, [visibleNodeIds]);
+
+  useEffect(() => {
+    const fg = graphRef.current as unknown as LayoutGraphRef | undefined;
+    if (!fg) {
+      return;
+    }
+
+    const graphNodes = useGraphStore.getState().nodes;
+    const mutableNodes = filteredNodes
+      .map((node) => graphNodes.get(node.id))
+      .filter((node): node is GraphNode => Boolean(node));
+
+    if (layoutMode === "force3d") {
+      for (const node of mutableNodes) {
+        node.fx = undefined;
+        node.fy = undefined;
+        node.fz = undefined;
+      }
+      fg.numDimensions?.(3);
+      fg.d3Force?.("charge")?.strength?.(FORCE_CHARGE_STRENGTH);
+      fg.d3Force?.("link")?.distance?.(FORCE_LINK_DISTANCE);
+    } else if (layoutMode === "radial") {
+      applyRadialLayout(mutableNodes, depthMap);
+      fg.numDimensions?.(2);
+      fg.d3Force?.("charge")?.strength?.(-30);
+      fg.d3Force?.("link")?.distance?.(FORCE_LINK_DISTANCE * 1.15);
+    } else {
+      applyHierarchicalLayout(mutableNodes, depthMap);
+      fg.numDimensions?.(2);
+      fg.d3Force?.("charge")?.strength?.(-18);
+      fg.d3Force?.("link")?.distance?.(FORCE_LINK_DISTANCE * 1.35);
+    }
+
+    fg.d3ReheatSimulation();
+  }, [depthMap, filteredNodes, layoutMode]);
+
+  useEffect(() => {
+    const fg = graphRef.current as unknown as LayoutGraphRef | undefined;
+    if (!fg) {
+      return;
+    }
+    fg.d3ReheatSimulation();
+  }, [filteredEdges.length, filteredNodes.length]);
+
   const handleNodeClick = useCallback(
     (node: GraphNode) => {
       selectNode(node.id);
@@ -104,7 +175,8 @@ export function GraphCanvas() {
       const config = getNodeConfig(node.ci_class);
       const opacity = getStatusOpacity(node.operational_status);
       const isSelected = node.id === selectedNodeId;
-      const isOnPath = pathHighlight.includes(node.id);
+      const isOnPath = pathSet.has(node.id);
+      const shouldShowLabel = showLabels && (filteredNodes.length <= 45 || isSelected || isOnPath || node.degree >= 10);
 
       const scale = isSelected ? 1.2 : 1;
       const size = config.size * scale;
@@ -146,20 +218,57 @@ export function GraphCanvas() {
         emissiveIntensity: isSelected ? 0.6 : config.glowIntensity,
       });
 
-      const mesh = new THREE.Mesh(geometry, material);
-
-      // Add label
-      if (showLabels) {
-        const sprite = new SpriteText(node.name);
-        sprite.color = isSelected ? "#ffffff" : "#cccccc";
-        sprite.textHeight = 3;
-        sprite.position.set(0, size + 2, 0);
-        mesh.add(sprite);
+      const cache = objectCacheRef.current;
+      const group = cache.get(node.id) ?? new THREE.Group();
+      let body = group.userData.body as THREE.Mesh | undefined;
+      if (!body) {
+        body = new THREE.Mesh();
+        group.userData.body = body;
+        group.add(body);
       }
 
-      return mesh;
+      if (body.geometry) {
+        body.geometry.dispose();
+      }
+      const oldMaterial = body.material;
+      if (oldMaterial instanceof THREE.Material) {
+        oldMaterial.dispose();
+      }
+      body.geometry = geometry;
+      body.material = material;
+
+      const existingLabel = group.userData.label as SpriteText | undefined;
+      if (existingLabel) {
+        group.remove(existingLabel);
+        const labelMaterial = existingLabel.material as THREE.Material;
+        labelMaterial.dispose();
+        group.userData.label = undefined;
+      }
+
+      if (shouldShowLabel) {
+        const sprite = new SpriteText(node.name) as SpriteText & {
+          backgroundColor?: string;
+          padding?: number;
+          borderRadius?: number;
+        };
+        sprite.color = isSelected
+          ? theme === "dark" ? "#ffffff" : "#111827"
+          : theme === "dark" ? "#d9e3ee" : "#475569";
+        sprite.backgroundColor = theme === "dark" ? "rgba(10,15,26,0.62)" : "rgba(255,255,255,0.88)";
+        sprite.padding = 3;
+        sprite.borderRadius = 4;
+        sprite.textHeight = isSelected ? 4 : 2.35;
+        sprite.position.set(0, size + 3, 0);
+        const spriteMaterial = sprite.material as THREE.Material;
+        spriteMaterial.depthWrite = false;
+        group.add(sprite);
+        group.userData.label = sprite;
+      }
+
+      cache.set(node.id, group);
+      return group;
     },
-    [pathHighlight, selectedNodeId, showLabels],
+    [filteredNodes.length, pathSet, selectedNodeId, showLabels, theme],
   );
 
   const linkColor = useCallback(
@@ -177,11 +286,6 @@ export function GraphCanvas() {
     },
     [],
   );
-
-  const graphData = {
-    nodes: filteredNodes,
-    links: filteredEdges,
-  };
 
   return (
     <div ref={containerRef} className="h-full w-full">
@@ -205,7 +309,7 @@ export function GraphCanvas() {
         linkDirectionalParticles={showParticles ? EDGE_PARTICLE_COUNT : 0}
         linkDirectionalParticleSpeed={EDGE_PARTICLE_SPEED}
         linkDirectionalParticleWidth={2}
-        d3AlphaDecay={0.02}
+        d3AlphaDecay={FORCE_ALPHA_DECAY}
         d3VelocityDecay={0.3}
         warmupTicks={FORCE_WARMUP_TICKS}
         cooldownTime={FORCE_COOLDOWN_TIME}
@@ -214,4 +318,123 @@ export function GraphCanvas() {
       />
     </div>
   );
+}
+
+type LayoutGraphRef = ForceGraphMethods<NodeObject<GraphNode>, LinkObject<GraphNode, GraphLink>> & {
+  numDimensions?: (dimensions: number) => void;
+  d3Force?: (forceName: string) => {
+    strength?: (value: number) => void;
+    distance?: (value: number) => void;
+  } | undefined;
+};
+
+function buildDepthMap(
+  centerId: string | null,
+  nodes: GraphNode[],
+  edges: GraphLink[],
+): Map<string, number> {
+  const adjacency = new Map<string, string[]>();
+  for (const node of nodes) {
+    adjacency.set(node.id, []);
+  }
+
+  for (const edge of edges) {
+    const source = typeof edge.source === "string" ? edge.source : edge.source.id;
+    const target = typeof edge.target === "string" ? edge.target : edge.target.id;
+    adjacency.get(source)?.push(target);
+    adjacency.get(target)?.push(source);
+  }
+
+  const fallbackCenterId = centerId ?? nodes[0]?.id;
+  const depths = new Map<string, number>();
+  if (!fallbackCenterId) {
+    return depths;
+  }
+
+  const queue: string[] = [fallbackCenterId];
+  depths.set(fallbackCenterId, 0);
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current) {
+      continue;
+    }
+
+    const currentDepth = depths.get(current) ?? 0;
+    for (const neighbor of adjacency.get(current) ?? []) {
+      if (!depths.has(neighbor)) {
+        depths.set(neighbor, currentDepth + 1);
+        queue.push(neighbor);
+      }
+    }
+  }
+
+  for (const node of nodes) {
+    if (!depths.has(node.id)) {
+      depths.set(node.id, 0);
+    }
+  }
+
+  return depths;
+}
+
+function applyRadialLayout(nodes: GraphNode[], depthMap: Map<string, number>): void {
+  const grouped = groupNodesByDepth(nodes, depthMap);
+  for (const [depth, levelNodes] of grouped.entries()) {
+    const radius = depth === 0 ? 0 : depth * RADIAL_RING_SPACING;
+    levelNodes.forEach((node, index) => {
+      if (depth === 0) {
+        node.fx = 0;
+        node.fy = 0;
+        node.fz = 0;
+        return;
+      }
+
+      const angle = (Math.PI * 2 * index) / levelNodes.length;
+      node.fx = Math.cos(angle) * radius;
+      node.fy = Math.sin(angle) * radius;
+      node.fz = 0;
+    });
+  }
+}
+
+function applyHierarchicalLayout(nodes: GraphNode[], depthMap: Map<string, number>): void {
+  const grouped = groupNodesByDepth(nodes, depthMap);
+  const maxLevelSize = Math.max(...grouped.values().map((group) => group.length), 1);
+
+  for (const [depth, levelNodes] of grouped.entries()) {
+    const y = depth * HIERARCHICAL_LAYER_SPACING;
+    const spread = Math.max(levelNodes.length - 1, 1);
+    levelNodes.forEach((node, index) => {
+      node.fx = ((index - spread / 2) * HIERARCHICAL_LAYER_SPACING * 1.15) / Math.max(maxLevelSize / 2, 1);
+      node.fy = y;
+      node.fz = 0;
+    });
+  }
+}
+
+function groupNodesByDepth(nodes: GraphNode[], depthMap: Map<string, number>): Map<number, GraphNode[]> {
+  const grouped = new Map<number, GraphNode[]>();
+  for (const node of nodes) {
+    const depth = depthMap.get(node.id) ?? 0;
+    const levelNodes = grouped.get(depth) ?? [];
+    levelNodes.push(node);
+    grouped.set(depth, levelNodes);
+  }
+  return grouped;
+}
+
+function disposeObject3D(object: THREE.Object3D): void {
+  object.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    if (mesh.geometry) {
+      mesh.geometry.dispose();
+    }
+
+    if (Array.isArray(mesh.material)) {
+      mesh.material.forEach((material) => material.dispose());
+    } else if (mesh.material) {
+      mesh.material.dispose();
+    }
+  });
 }

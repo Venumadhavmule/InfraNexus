@@ -15,8 +15,11 @@ export const WS_MAX_RECONNECT_ATTEMPTS = 10;
 export const FORCE_CHARGE_STRENGTH = -120;
 export const FORCE_LINK_DISTANCE = 50;
 export const FORCE_CENTER_STRENGTH = 0.05;
+export const FORCE_ALPHA_DECAY = 0.004;
 export const FORCE_WARMUP_TICKS = 100;
 export const FORCE_COOLDOWN_TIME = 15_000;
+export const RADIAL_RING_SPACING = 90;
+export const HIERARCHICAL_LAYER_SPACING = 110;
 
 // ── Visual Thresholds ──────────────────────────────────────
 export const LABEL_VISIBILITY_DISTANCE = 300;

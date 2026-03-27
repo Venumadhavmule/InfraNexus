@@ -5,18 +5,18 @@ import type { NodeConfig } from "@/types";
  * Colors are from a perceptually distinct palette for dark backgrounds.
  */
 export const CI_CLASS_CONFIG: Record<string, NodeConfig> = {
-  Server:       { shape: "box",          color: "#4FC3F7", size: 6, glowIntensity: 0.4 },
-  "Virtual Machine": { shape: "sphere",  color: "#81C784", size: 5, glowIntensity: 0.3 },
-  Database:     { shape: "cylinder",     color: "#FFB74D", size: 6, glowIntensity: 0.5 },
-  Application:  { shape: "dodecahedron", color: "#CE93D8", size: 7, glowIntensity: 0.6 },
+  Server:       { shape: "box",          color: "#68d1f4", size: 6, glowIntensity: 0.32 },
+  "Virtual Machine": { shape: "sphere",  color: "#8fd08d", size: 5, glowIntensity: 0.26 },
+  Database:     { shape: "cylinder",     color: "#ffc872", size: 6, glowIntensity: 0.38 },
+  Application:  { shape: "dodecahedron", color: "#d7a6df", size: 7, glowIntensity: 0.42 },
   Service:      { shape: "icosahedron",  color: "#F06292", size: 7, glowIntensity: 0.6 },
-  "Load Balancer": { shape: "torus",     color: "#4DD0E1", size: 5, glowIntensity: 0.4 },
-  Network:      { shape: "octahedron",   color: "#AED581", size: 5, glowIntensity: 0.3 },
+  "Load Balancer": { shape: "torus",     color: "#69d9e7", size: 5, glowIntensity: 0.32 },
+  Network:      { shape: "octahedron",   color: "#bfd98a", size: 5, glowIntensity: 0.26 },
   Firewall:     { shape: "cone",         color: "#EF5350", size: 5, glowIntensity: 0.5 },
-  Router:       { shape: "octahedron",   color: "#26A69A", size: 5, glowIntensity: 0.3 },
-  Switch:       { shape: "octahedron",   color: "#66BB6A", size: 4, glowIntensity: 0.3 },
-  Storage:      { shape: "cylinder",     color: "#FFA726", size: 6, glowIntensity: 0.4 },
-  Container:    { shape: "sphere",       color: "#42A5F5", size: 4, glowIntensity: 0.3 },
+  Router:       { shape: "octahedron",   color: "#39b6a7", size: 5, glowIntensity: 0.26 },
+  Switch:       { shape: "octahedron",   color: "#7ac57a", size: 4, glowIntensity: 0.26 },
+  Storage:      { shape: "cylinder",     color: "#ffb75a", size: 6, glowIntensity: 0.3 },
+  Container:    { shape: "sphere",       color: "#63b9f7", size: 4, glowIntensity: 0.24 },
   "Kubernetes Cluster": { shape: "icosahedron", color: "#7E57C2", size: 7, glowIntensity: 0.5 },
   "Business Service": { shape: "dodecahedron", color: "#EC407A", size: 8, glowIntensity: 0.7 },
   Cluster:      { shape: "icosahedron",  color: "#AB47BC", size: 6, glowIntensity: 0.5 },
@@ -46,7 +46,7 @@ export function getStatusOpacity(status: number): number {
     case 1: return 1.0;
     case 2: return 0.5;
     case 3: return 0.6;
-    case 4: return 0.25;
+    case 4: return 0.35;
     default: return 0.8;
   }
 }
