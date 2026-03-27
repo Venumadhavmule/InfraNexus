@@ -9,6 +9,11 @@ export function useWebSocket() {
   const reconnectCount = useRef(0);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleWSEvent = useETLStore((s) => s.handleWSEvent);
+  const handleWSEventRef = useRef(handleWSEvent);
+
+  useEffect(() => {
+    handleWSEventRef.current = handleWSEvent;
+  }, [handleWSEvent]);
 
   useEffect(() => {
     let allowReconnect = true;
@@ -39,7 +44,7 @@ export function useWebSocket() {
         ws.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
-            handleWSEvent(data);
+            handleWSEventRef.current(data);
           } catch {
             // Ignore malformed messages
           }
@@ -69,5 +74,5 @@ export function useWebSocket() {
       reconnectCount.current = WS_MAX_RECONNECT_ATTEMPTS;
       disconnect();
     };
-  }, [handleWSEvent]);
+  }, []);
 }

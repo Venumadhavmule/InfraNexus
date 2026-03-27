@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { CMDBGraph } from "@/components/graph/CMDBGraph";
 import { GraphStats } from "@/components/graph/GraphStats";
 import { SearchBar } from "@/components/search/SearchBar";
@@ -29,6 +29,10 @@ export default function GraphPage() {
   const lastSyncTimestamp = useETLStore((s) => s.lastSyncTimestamp);
   const setFromStatus = useETLStore((s) => s.setFromStatus);
   const handleWSEvent = useETLStore((s) => s.handleWSEvent);
+  const autoSyncRequestedRef = useRef(false);
+  const loadStarterSceneRef = useRef(loadStarterScene);
+  const setFromStatusRef = useRef(setFromStatus);
+  const handleWSEventRef = useRef(handleWSEvent);
 
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel);
   const toggleRightPanel = useUIStore((s) => s.toggleRightPanel);
@@ -37,69 +41,93 @@ export default function GraphPage() {
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
 
   useEffect(() => {
-    let cancelled = false;
+    loadStarterSceneRef.current = loadStarterScene;
+    setFromStatusRef.current = setFromStatus;
+    handleWSEventRef.current = handleWSEvent;
+  }, [handleWSEvent, loadStarterScene, setFromStatus]);
 
-    const loadStatus = async () => {
-      try {
-        const status = await fetchETLStatus();
-        if (!cancelled) {
-          setFromStatus(status);
-        }
-      } catch {
-        // Ignore ETL status bootstrap errors.
-      }
-    };
+  const loadStarterSceneIfAvailable = useCallback(async () => {
+    const stats = await fetchGraphStats();
+    if (stats.total_nodes <= 0) {
+      return false;
+    }
 
-    void loadStatus();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [setFromStatus]);
+    await loadStarterSceneRef.current();
+    return true;
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
-    const tryLoadStarterScene = async () => {
-      if (nodeCount > 0 || loading) {
-        return;
-      }
-
+    const bootstrapGraph = async () => {
       try {
-        const status = await fetchETLStatus();
-        const stats = await fetchGraphStats();
-        if (cancelled) {
-          return;
-        }
+        const [status, graphLoaded] = await Promise.all([
+          fetchETLStatus(),
+          nodeCount === 0 && !loading ? loadStarterSceneIfAvailable() : Promise.resolve(false),
+        ]);
 
-        setFromStatus(status);
+        if (!cancelled) {
+          setFromStatusRef.current(status);
+          if (graphLoaded || nodeCount > 0) {
+            return;
+          }
 
-        if (stats.total_nodes > 0) {
-          await loadStarterScene();
-          return;
-        }
-
-        if (status.status === "idle") {
-          const response = await triggerSync("full");
-          if (!cancelled) {
-            handleWSEvent({
-              type: "sync_started",
-              sync_id: response.sync_id,
-              sync_type: response.type,
-            });
+          if (status.status === "idle" && !autoSyncRequestedRef.current) {
+            autoSyncRequestedRef.current = true;
+            const response = await triggerSync("full");
+            if (!cancelled) {
+              handleWSEventRef.current({
+                type: "sync_started",
+                sync_id: response.sync_id,
+                sync_type: response.type,
+              });
+            }
           }
         }
       } catch {
-        // Keep the page usable even if stats or starter-scene load fails.
+        // Keep the page usable even if bootstrap checks fail.
       }
     };
 
-    void tryLoadStarterScene();
+    void bootstrapGraph();
 
     return () => {
       cancelled = true;
     };
-  }, [nodeCount, loading, etlStatus, lastSyncTimestamp, loadStarterScene, setFromStatus, handleWSEvent]);
+  }, [loadStarterSceneIfAvailable, loading, nodeCount]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const finalizeBootstrap = async () => {
+      if (nodeCount > 0 || loading || etlStatus !== "idle") {
+        return;
+      }
+
+      try {
+        const [status, graphLoaded] = await Promise.all([
+          fetchETLStatus(),
+          loadStarterSceneIfAvailable(),
+        ]);
+        if (cancelled) {
+          return;
+        }
+
+        setFromStatusRef.current(status);
+        if (graphLoaded) {
+          autoSyncRequestedRef.current = false;
+        }
+      } catch {
+        // Keep the page usable even if post-sync graph load fails.
+      }
+    };
+
+    void finalizeBootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [etlStatus, lastSyncTimestamp, loadStarterSceneIfAvailable, loading, nodeCount]);
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-background">
@@ -116,10 +144,10 @@ export default function GraphPage() {
       {/* Panel toggle buttons */}
       <div className="absolute left-2 top-1/2 z-20 -translate-y-1/2">
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           onClick={toggleLeftPanel}
-          className="h-8 w-8 p-0 opacity-60 hover:opacity-100"
+          className="h-9 w-9 border-border/70 bg-background/90 p-0 text-foreground shadow-md transition hover:bg-background"
           aria-label="Toggle left panel"
         >
           {leftPanelOpen ? "‹" : "›"}
@@ -127,10 +155,10 @@ export default function GraphPage() {
       </div>
       <div className="absolute right-2 top-1/2 z-20 -translate-y-1/2">
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           onClick={toggleRightPanel}
-          className="h-8 w-8 p-0 opacity-60 hover:opacity-100"
+          className="h-10 w-10 border-primary/50 bg-background/95 p-0 text-primary shadow-lg ring-1 ring-primary/20 transition hover:bg-primary/10"
           aria-label="Toggle right panel"
         >
           {rightPanelOpen ? "›" : "‹"}

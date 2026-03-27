@@ -17,6 +17,8 @@ const STAGE_PROGRESS: Record<string, number> = {
 interface ETLState {
   status: SyncStatus;
   progress: number; // 0-100
+  currentStage: string | null;
+  currentStageStartedAt: string | null;
   lastSyncType: SyncType | null;
   lastSyncTimestamp: string | null;
   lastSyncDuration: number | null;
@@ -32,6 +34,10 @@ interface ETLState {
   handleWSEvent: (event: WSEvent) => void;
   setFromStatus: (data: {
     status: SyncStatus;
+    current_sync_id: string | null;
+    current_sync_type: SyncType | null;
+    current_stage: string | null;
+    current_stage_started_at: string | null;
     last_sync_type: SyncType | null;
     last_sync_timestamp: string | null;
     last_sync_duration_seconds: number | null;
@@ -46,6 +52,8 @@ interface ETLState {
 export const useETLStore = create<ETLState>((set) => ({
   status: "idle",
   progress: 0,
+  currentStage: null,
+  currentStageStartedAt: null,
   lastSyncType: null,
   lastSyncTimestamp: null,
   lastSyncDuration: null,
@@ -64,17 +72,26 @@ export const useETLStore = create<ETLState>((set) => ({
         set({
           status: "running",
           progress: 0,
+          currentStage: null,
+          currentStageStartedAt: null,
+          lastSyncType: event.sync_type ?? null,
           currentSyncId: event.sync_id ?? null,
           lastError: null,
         });
         break;
       case "sync_progress":
-        set({ progress: event.progress ?? (event.stage ? STAGE_PROGRESS[event.stage] ?? 0 : 0) });
+        set({
+          progress: event.progress ?? (event.stage ? STAGE_PROGRESS[event.stage] ?? 0 : 0),
+          currentStage: event.stage ?? null,
+          currentStageStartedAt: new Date().toISOString(),
+        });
         break;
       case "sync_completed":
         set({
           status: "idle",
           progress: 100,
+          currentStage: null,
+          currentStageStartedAt: null,
           lastSyncTimestamp: new Date().toISOString(),
           lastCICount: event.ci_count ?? null,
           lastRelCount: event.rel_count ?? null,
@@ -88,6 +105,7 @@ export const useETLStore = create<ETLState>((set) => ({
         set({
           status: "failed",
           progress: 0,
+          currentStage: event.stage ?? null,
           lastError: event.error ?? "Unknown error",
           currentSyncId: null,
         });
@@ -98,6 +116,9 @@ export const useETLStore = create<ETLState>((set) => ({
   setFromStatus: (data) =>
     set({
       status: data.status,
+      currentSyncId: data.current_sync_id,
+      currentStage: data.current_stage,
+      currentStageStartedAt: data.current_stage_started_at,
       lastSyncType: data.last_sync_type,
       lastSyncTimestamp: data.last_sync_timestamp,
       lastSyncDuration: data.last_sync_duration_seconds,
@@ -111,6 +132,8 @@ export const useETLStore = create<ETLState>((set) => ({
     set({
       status: "idle",
       progress: 0,
+      currentStage: null,
+      currentStageStartedAt: null,
       lastSyncType: null,
       lastSyncTimestamp: null,
       lastSyncDuration: null,
