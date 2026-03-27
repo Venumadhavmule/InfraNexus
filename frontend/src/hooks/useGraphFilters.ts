@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useGraphStore } from "@/store/graphStore";
-import type { GraphNode, GraphLink } from "@/types";
+import type { GraphNode } from "@/types";
 
 /**
  * Returns filtered nodes and edges based on the current graph filter state.

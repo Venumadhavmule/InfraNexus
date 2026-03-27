@@ -35,6 +35,10 @@ class ETLStatusResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     status: SyncStatus
+    current_sync_id: str | None = None
+    current_sync_type: SyncType | None = None
+    current_stage: str | None = None
+    current_stage_started_at: datetime | None = None
     last_sync_type: SyncType | None = None
     last_sync_timestamp: datetime | None = None
     last_sync_duration_seconds: float | None = None

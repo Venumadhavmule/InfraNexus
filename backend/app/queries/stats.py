@@ -24,7 +24,7 @@ ORDER BY count DESC
 
 ENVIRONMENT_DISTRIBUTION = """
 MATCH (c:CI)
-RETURN c.environment AS environment, count(c) AS count
+RETURN coalesce(c.environment, 'Unknown') AS environment, count(c) AS count
 ORDER BY count DESC
 """
 

@@ -72,6 +72,22 @@ async def get_clusters(
 
 
 @router.get(
+    "/starter",
+    response_model=NeighborhoodResponse,
+    summary="Get a bounded starter graph scene",
+)
+async def get_starter_scene(
+    graph: Annotated[GraphService, Depends(get_graph_service)],
+    max_nodes: Annotated[int | None, Query(ge=1, le=500)] = 100,
+    degree_threshold: Annotated[int | None, Query(ge=1)] = None,
+) -> NeighborhoodResponse:
+    return await graph.get_starter_scene(
+        max_nodes=max_nodes,
+        degree_threshold=degree_threshold,
+    )
+
+
+@router.get(
     "/stats",
     response_model=GraphStatsResponse,
     summary="Graph-wide statistics",

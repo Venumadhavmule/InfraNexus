@@ -94,6 +94,11 @@ class KuzuManager:
             await asyncio.to_thread(self._writer.execute, cypher)
         log.info("kuzu_manager.bulk_copy_complete", table=table, path=str(csv_path))
 
+    async def has_ci_data(self) -> bool:
+        rows = await self.read_query("MATCH (c:CI) RETURN count(c) AS total")
+        total = rows[0]["total"] if rows else 0
+        return total > 0
+
     def _execute(
         self, conn: kuzu.Connection, cypher: str, params: dict[str, Any]
     ) -> list[dict[str, Any]]:

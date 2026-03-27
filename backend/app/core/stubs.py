@@ -40,6 +40,9 @@ class StubKuzuManager:
     async def bulk_copy(self, table: str, csv_path: Path) -> None:
         pass
 
+    async def has_ci_data(self) -> bool:
+        return False
+
     async def close(self) -> None:
         log.info("stub_kuzu.closed")
 

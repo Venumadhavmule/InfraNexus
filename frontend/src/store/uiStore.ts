@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { LayoutMode, ThemeMode, HopDepth } from "@/types";
+import type { LayoutMode, ThemeMode } from "@/types";
 
 interface UIState {
   // ── Panels ───────────────────────────────────────────────

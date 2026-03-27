@@ -206,6 +206,24 @@ class GraphService:
             cached=False,
         )
 
+    async def get_starter_scene(
+        self,
+        *,
+        max_nodes: int | None = None,
+        degree_threshold: int | None = None,
+    ) -> NeighborhoodResponse:
+        center_rows = await self._kuzu.read_query(nb_q.STARTER_CENTER, {})
+        if not center_rows:
+            raise CINotFoundError("starter-scene")
+
+        center_id = center_rows[0]["sys_id"]
+        return await self.get_neighborhood(
+            center_id,
+            hops=1,
+            max_nodes=max_nodes,
+            degree_threshold=degree_threshold,
+        )
+
     def _select_neighborhood_query(
         self,
         ci_id: str,

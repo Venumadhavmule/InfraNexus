@@ -96,6 +96,10 @@ export interface SyncTriggerResponse {
 
 export interface ETLStatusResponse {
   status: SyncStatus;
+  current_sync_id: string | null;
+  current_sync_type: SyncType | null;
+  current_stage: string | null;
+  current_stage_started_at: string | null;
   last_sync_type: SyncType | null;
   last_sync_timestamp: string | null;
   last_sync_duration_seconds: number | null;
@@ -136,10 +140,12 @@ export interface SearchFilters {
 }
 
 export interface WSEvent {
-  type: "sync_started" | "sync_progress" | "sync_completed" | "sync_failed";
+  type: "sync_started" | "sync_progress" | "sync_completed" | "sync_failed" | "sync_error";
   sync_id?: string;
   sync_type?: SyncType;
   progress?: number;
+  stage?: string;
+  count?: number;
   message?: string;
   ci_count?: number;
   rel_count?: number;

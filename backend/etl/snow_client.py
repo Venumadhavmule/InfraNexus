@@ -3,11 +3,12 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator
 from datetime import datetime
+import json
 from typing import Any
 
 import httpx
 
-from app.exceptions import SnowAuthError, SnowRateLimitError, SnowTimeoutError
+from app.exceptions import SnowAuthError, SnowRateLimitError, SnowResponseError, SnowTimeoutError
 from app.logging import get_logger
 
 log = get_logger(__name__)
@@ -103,7 +104,76 @@ class SnowClient:
                 response = await client.get(url, params=params)
 
                 if response.status_code == 200:
-                    return response.json()
+                    content_type = response.headers.get("content-type", "").lower()
+                    body_preview = self._body_preview(response)
+
+                    if not response.content or not response.content.strip():
+                        backoff = min(_BACKOFF_BASE * (2**attempt), _BACKOFF_MAX)
+                        log.warning(
+                            "snow.empty_body",
+                            url=url,
+                            attempt=attempt,
+                            content_type=content_type or None,
+                            content_length=response.headers.get("content-length"),
+                            backoff=backoff,
+                        )
+                        if attempt == _MAX_RETRIES - 1:
+                            raise SnowResponseError(f"empty body from {url}")
+                        await asyncio.sleep(backoff)
+                        continue
+
+                    if not self._is_json_content_type(content_type):
+                        lower_preview = body_preview.lower()
+                        is_hibernating = self._is_hibernation_page(lower_preview)
+                        is_login_page = self._is_login_page(lower_preview)
+                        backoff = min(_BACKOFF_BASE * (2**attempt), _BACKOFF_MAX)
+                        log.warning(
+                            "snow.instance_hibernating" if is_hibernating else "snow.unexpected_content_type",
+                            url=url,
+                            attempt=attempt,
+                            content_type=content_type or None,
+                            content_length=response.headers.get("content-length"),
+                            body_preview=body_preview,
+                            backoff=backoff,
+                        )
+                        if is_login_page:
+                            raise SnowAuthError()
+                        if attempt == _MAX_RETRIES - 1:
+                            if is_hibernating:
+                                raise SnowResponseError("ServiceNow instance is hibernating. Wake the instance and retry.")
+                            raise SnowResponseError(f"unexpected content type '{content_type or 'unknown'}' from {url}")
+                        await asyncio.sleep(backoff)
+                        continue
+
+                    try:
+                        payload = response.json()
+                    except (httpx.DecodingError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+                        backoff = min(_BACKOFF_BASE * (2**attempt), _BACKOFF_MAX)
+                        log.warning(
+                            "snow.invalid_json",
+                            url=url,
+                            attempt=attempt,
+                            content_type=content_type,
+                            content_length=response.headers.get("content-length"),
+                            body_preview=body_preview,
+                            error=str(exc),
+                            backoff=backoff,
+                        )
+                        if attempt == _MAX_RETRIES - 1:
+                            raise SnowResponseError(f"invalid JSON from {url}")
+                        await asyncio.sleep(backoff)
+                        continue
+
+                    if not isinstance(payload, dict):
+                        log.warning(
+                            "snow.unexpected_payload_shape",
+                            url=url,
+                            payload_type=type(payload).__name__,
+                            attempt=attempt,
+                        )
+                        raise SnowResponseError(f"unexpected JSON payload from {url}")
+
+                    return payload
 
                 if response.status_code == 401:
                     raise SnowAuthError()
@@ -135,8 +205,35 @@ class SnowClient:
                 backoff = min(_BACKOFF_BASE * (2**attempt), _BACKOFF_MAX)
                 log.warning("snow.timeout", attempt=attempt, backoff=backoff)
                 await asyncio.sleep(backoff)
+            except httpx.HTTPError as exc:
+                if attempt == _MAX_RETRIES - 1:
+                    raise SnowResponseError(f"HTTP transport failure for {url}: {exc}") from exc
+                backoff = min(_BACKOFF_BASE * (2**attempt), _BACKOFF_MAX)
+                log.warning("snow.http_error", url=url, attempt=attempt, error=str(exc), backoff=backoff)
+                await asyncio.sleep(backoff)
 
         raise SnowTimeoutError()
+
+    @staticmethod
+    def _is_json_content_type(content_type: str) -> bool:
+        return "application/json" in content_type or content_type.endswith("+json")
+
+    @staticmethod
+    def _is_hibernation_page(body_preview: str) -> bool:
+        return "hibernat" in body_preview or "developer.servicenow.com" in body_preview
+
+    @staticmethod
+    def _is_login_page(body_preview: str) -> bool:
+        return "login" in body_preview and "hibernat" not in body_preview
+
+    @staticmethod
+    def _body_preview(response: httpx.Response, limit: int = 200) -> str:
+        try:
+            text = response.text
+        except UnicodeDecodeError:
+            return "<binary response>"
+        preview = text.strip().replace("\n", " ").replace("\r", " ")
+        return preview[:limit]
 
     async def close(self) -> None:
         if self._client and not self._client.is_closed:

@@ -32,6 +32,7 @@ class ETLScheduler:
             replace_existing=True,
         )
         self._scheduler.start()
+        await self._state.set_scheduler_interval(self._interval)
         log.info("etl_scheduler.started", interval_minutes=self._interval)
 
     async def _run_if_idle(self) -> None:
@@ -43,6 +44,7 @@ class ETLScheduler:
         sync_id = uuid.uuid4().hex[:12]
         await self._state.set_running(sync_id, "incremental")
         await self._runner.run_incremental_sync(sync_id)
+        await self._state.set_scheduler_interval(self._interval)
 
     async def stop(self) -> None:
         self._scheduler.shutdown(wait=False)
