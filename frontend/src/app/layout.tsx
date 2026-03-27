@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "InfraNexus — CMDB Graph Visualizer",
+  title: "InfraNexus - CMDB Graph Visualizer",
   description:
     "Interactive 3D visualization of ServiceNow CMDB Configuration Items and their relationships",
 };

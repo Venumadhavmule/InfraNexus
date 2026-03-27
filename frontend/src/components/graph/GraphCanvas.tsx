@@ -16,6 +16,11 @@ import { useKeyboardNav } from "@/hooks/useKeyboardNav";
 import { getNodeConfig, getStatusOpacity } from "@/lib/colorMap";
 import { getEdgeStyle } from "@/lib/edgeStyles";
 import {
+  FORCE_ALPHA_DECAY,
+  FORCE_CHARGE_STRENGTH,
+  FORCE_LINK_DISTANCE,
+  HIERARCHICAL_LAYER_SPACING,
+  RADIAL_RING_SPACING,
   FORCE_WARMUP_TICKS,
   FORCE_COOLDOWN_TIME,
   EDGE_PARTICLE_COUNT,
@@ -120,31 +125,32 @@ export function GraphCanvas() {
         node.fy = undefined;
         node.fz = undefined;
       }
-      fg.numDimensions?.(3);
-      fg.d3Force?.("charge")?.strength?.(FORCE_CHARGE_STRENGTH);
-      fg.d3Force?.("link")?.distance?.(FORCE_LINK_DISTANCE);
+      const chargeForce = fg.d3Force?.("charge");
+      const linkForce = fg.d3Force?.("link");
+      chargeForce?.strength?.(FORCE_CHARGE_STRENGTH);
+      linkForce?.distance?.(FORCE_LINK_DISTANCE);
     } else if (layoutMode === "radial") {
       applyRadialLayout(mutableNodes, depthMap);
-      fg.numDimensions?.(2);
-      fg.d3Force?.("charge")?.strength?.(-30);
-      fg.d3Force?.("link")?.distance?.(FORCE_LINK_DISTANCE * 1.15);
+      const chargeForce = fg.d3Force?.("charge");
+      const linkForce = fg.d3Force?.("link");
+      chargeForce?.strength?.(-30);
+      linkForce?.distance?.(FORCE_LINK_DISTANCE * 1.15);
     } else {
       applyHierarchicalLayout(mutableNodes, depthMap);
-      fg.numDimensions?.(2);
-      fg.d3Force?.("charge")?.strength?.(-18);
-      fg.d3Force?.("link")?.distance?.(FORCE_LINK_DISTANCE * 1.35);
+      const chargeForce = fg.d3Force?.("charge");
+      const linkForce = fg.d3Force?.("link");
+      chargeForce?.strength?.(-18);
+      linkForce?.distance?.(FORCE_LINK_DISTANCE * 1.35);
     }
 
-    fg.d3ReheatSimulation();
+    const frameId = requestAnimationFrame(() => {
+      graphRef.current?.d3ReheatSimulation();
+    });
+
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
   }, [depthMap, filteredNodes, layoutMode]);
-
-  useEffect(() => {
-    const fg = graphRef.current as unknown as LayoutGraphRef | undefined;
-    if (!fg) {
-      return;
-    }
-    fg.d3ReheatSimulation();
-  }, [filteredEdges.length, filteredNodes.length]);
 
   const handleNodeClick = useCallback(
     (node: GraphNode) => {
@@ -176,10 +182,27 @@ export function GraphCanvas() {
       const opacity = getStatusOpacity(node.operational_status);
       const isSelected = node.id === selectedNodeId;
       const isOnPath = pathSet.has(node.id);
-      const shouldShowLabel = showLabels && (filteredNodes.length <= 45 || isSelected || isOnPath || node.degree >= 10);
+      const shouldShowLabel = showLabels && (filteredNodes.length <= 80 || isSelected || isOnPath || node.degree >= 8);
 
       const scale = isSelected ? 1.2 : 1;
       const size = config.size * scale;
+      const renderSignature = [
+        config.shape,
+        config.color,
+        size,
+        opacity,
+        isSelected,
+        isOnPath,
+        shouldShowLabel,
+        theme,
+        node.name,
+      ].join("|");
+
+      const cache = objectCacheRef.current;
+      const group = cache.get(node.id) ?? new THREE.Group();
+      if (group.userData.signature === renderSignature) {
+        return group;
+      }
 
       // Create geometry based on shape
       let geometry: THREE.BufferGeometry;
@@ -218,8 +241,6 @@ export function GraphCanvas() {
         emissiveIntensity: isSelected ? 0.6 : config.glowIntensity,
       });
 
-      const cache = objectCacheRef.current;
-      const group = cache.get(node.id) ?? new THREE.Group();
       let body = group.userData.body as THREE.Mesh | undefined;
       if (!body) {
         body = new THREE.Mesh();
@@ -236,12 +257,13 @@ export function GraphCanvas() {
       }
       body.geometry = geometry;
       body.material = material;
+      body.renderOrder = 1;
 
       const existingLabel = group.userData.label as SpriteText | undefined;
       if (existingLabel) {
         group.remove(existingLabel);
-        const labelMaterial = existingLabel.material as THREE.Material;
-        labelMaterial.dispose();
+        const labelMaterial = existingLabel.material as THREE.Material | undefined;
+        labelMaterial?.dispose();
         group.userData.label = undefined;
       }
 
@@ -254,17 +276,19 @@ export function GraphCanvas() {
         sprite.color = isSelected
           ? theme === "dark" ? "#ffffff" : "#111827"
           : theme === "dark" ? "#d9e3ee" : "#475569";
-        sprite.backgroundColor = theme === "dark" ? "rgba(10,15,26,0.62)" : "rgba(255,255,255,0.88)";
-        sprite.padding = 3;
+        sprite.backgroundColor = theme === "dark" ? "rgba(10,15,26,0.74)" : "rgba(255,255,255,0.92)";
+        sprite.padding = 4;
         sprite.borderRadius = 4;
-        sprite.textHeight = isSelected ? 4 : 2.35;
-        sprite.position.set(0, size + 3, 0);
+        sprite.textHeight = isSelected ? 4.2 : 2.7;
+        sprite.position.set(0, size + 4, 0);
         const spriteMaterial = sprite.material as THREE.Material;
         spriteMaterial.depthWrite = false;
+        spriteMaterial.depthTest = false;
         group.add(sprite);
         group.userData.label = sprite;
       }
 
+      group.userData.signature = renderSignature;
       cache.set(node.id, group);
       return group;
     },
@@ -321,7 +345,6 @@ export function GraphCanvas() {
 }
 
 type LayoutGraphRef = ForceGraphMethods<NodeObject<GraphNode>, LinkObject<GraphNode, GraphLink>> & {
-  numDimensions?: (dimensions: number) => void;
   d3Force?: (forceName: string) => {
     strength?: (value: number) => void;
     distance?: (value: number) => void;

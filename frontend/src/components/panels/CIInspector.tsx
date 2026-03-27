@@ -14,7 +14,15 @@ import {
 import { getNodeColor } from "@/lib/colorMap";
 
 export function CIInspector() {
-  const { ci, ciError, ciLoading } = useCI();
+  const { ci, ciError, ciLoading, syncPaused } = useCI();
+
+  if (syncPaused) {
+    return (
+      <div className="p-4 text-sm text-muted-foreground">
+        Full reload is refreshing the graph data. Inspector details will resume when the sync finishes.
+      </div>
+    );
+  }
 
   if (ciLoading) {
     return (

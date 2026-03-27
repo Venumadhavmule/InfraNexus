@@ -17,6 +17,7 @@ const STAGE_PROGRESS: Record<string, number> = {
 interface ETLState {
   status: SyncStatus;
   progress: number; // 0-100
+  currentSyncType: SyncType | null;
   currentStage: string | null;
   currentStageStartedAt: string | null;
   lastSyncType: SyncType | null;
@@ -52,6 +53,7 @@ interface ETLState {
 export const useETLStore = create<ETLState>((set) => ({
   status: "idle",
   progress: 0,
+  currentSyncType: null,
   currentStage: null,
   currentStageStartedAt: null,
   lastSyncType: null,
@@ -72,6 +74,7 @@ export const useETLStore = create<ETLState>((set) => ({
         set({
           status: "running",
           progress: 0,
+          currentSyncType: event.sync_type ?? null,
           currentStage: null,
           currentStageStartedAt: null,
           lastSyncType: event.sync_type ?? null,
@@ -90,6 +93,7 @@ export const useETLStore = create<ETLState>((set) => ({
         set({
           status: "idle",
           progress: 100,
+          currentSyncType: null,
           currentStage: null,
           currentStageStartedAt: null,
           lastSyncTimestamp: new Date().toISOString(),
@@ -105,6 +109,7 @@ export const useETLStore = create<ETLState>((set) => ({
         set({
           status: "failed",
           progress: 0,
+          currentSyncType: null,
           currentStage: event.stage ?? null,
           lastError: event.error ?? "Unknown error",
           currentSyncId: null,
@@ -117,6 +122,7 @@ export const useETLStore = create<ETLState>((set) => ({
     set({
       status: data.status,
       currentSyncId: data.current_sync_id,
+      currentSyncType: data.current_sync_type,
       currentStage: data.current_stage,
       currentStageStartedAt: data.current_stage_started_at,
       lastSyncType: data.last_sync_type,
@@ -132,6 +138,7 @@ export const useETLStore = create<ETLState>((set) => ({
     set({
       status: "idle",
       progress: 0,
+      currentSyncType: null,
       currentStage: null,
       currentStageStartedAt: null,
       lastSyncType: null,
