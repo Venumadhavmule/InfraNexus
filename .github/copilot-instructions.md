@@ -1,8 +1,8 @@
-# InfraNexus — Copilot Instructions
+# InfraNexus - Copilot Instructions
 
 ## Project Overview
 
-InfraNexus is a **ServiceNow CMDB Graph Visualizer** — a full-stack application that renders Configuration Items (CIs) and their relationships as an interactive 3D WebGL force-directed graph. It ingests 1M+ CIs from ServiceNow, stores them in Kuzu (embedded graph DB), indexes them in Meilisearch, caches with Redis, and renders 3D graphs in the browser using Three.js.
+InfraNexus is a **ServiceNow CMDB Graph Visualizer** - a full-stack application that renders Configuration Items (CIs) and their relationships as an interactive 3D WebGL force-directed graph. It ingests 1M+ CIs from ServiceNow, stores them in Kuzu (embedded graph DB), indexes them in Meilisearch, caches with Redis, and renders 3D graphs in the browser using Three.js.
 
 ## Monorepo Structure
 
@@ -57,7 +57,7 @@ infranexus/
 - Functional components only
 - Custom hooks for data logic
 - Zustand for client state, SWR for server state
-- Never use `any` — define proper types in `types/`
+- Never use `any` - define proper types in `types/`
 - Use `Map<string, T>` for node/edge collections (O(1) lookup)
 
 ## ServiceNow Domain Model
@@ -71,7 +71,7 @@ infranexus/
 
 ## Key Architecture Documents
 
-- `docs/BACKEND_PLAN.md` — Complete backend architecture
-- `docs/FRONTEND_PLAN.md` — Complete frontend architecture
-- `docs/PRODUCT_PLAN.md` — Full product specification
-- `docs/FEATURES.md` — Feature list and required skills
+- `docs/BACKEND_PLAN.md` - Complete backend architecture
+- `docs/FRONTEND_PLAN.md` - Complete frontend architecture
+- `docs/PRODUCT_PLAN.md` - Full product specification
+- `docs/FEATURES.md` - Feature list and required skills

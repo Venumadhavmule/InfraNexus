@@ -1,4 +1,4 @@
-# All Cypher queries are parameterized constants — never dynamically constructed.
+# All Cypher queries are parameterized constants - never dynamically constructed.
 
 NEIGHBORHOOD_BASIC = """
 MATCH (center:CI {sys_id: $ci_id})-[r:RELATES_TO*1..{hops}]-(neighbor:CI)

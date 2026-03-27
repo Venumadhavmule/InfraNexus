@@ -1,19 +1,19 @@
 ═══════════════════════════════════════════════════════════════════════════════════════
-         SERVICENOW CMDB GRAPH VISUALIZER — COMPLETE IMPLEMENTATION PROMPT
+         SERVICENOW CMDB GRAPH VISUALIZER - COMPLETE IMPLEMENTATION PROMPT
          Full-Stack | Production-Grade | 1M+ CI Scale | GitNexus-Style
 ═══════════════════════════════════════════════════════════════════════════════════════
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SECTION 0 — PRODUCT VISION & CONSTRAINTS
+SECTION 0 - PRODUCT VISION & CONSTRAINTS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Build a production-grade ServiceNow CMDB Graph Visualizer — a full-stack application
+Build a production-grade ServiceNow CMDB Graph Visualizer - a full-stack application
 that renders Configuration Items (CIs) and their relationships as an interactive 3D
 WebGL force-directed graph, inspired by GitNexus (gitnexus.vercel.app).
 
 KEY CONSTRAINTS:
   - Must support 1,000,000+ CIs without degradation
-  - NEVER load full graph to frontend — always subgraph by neighborhood
+  - NEVER load full graph to frontend - always subgraph by neighborhood
   - Cold start to first meaningful render < 2 seconds
   - k-hop neighborhood query < 100ms at 1M scale
   - Incremental sync from ServiceNow (not full re-index every time)
@@ -21,7 +21,7 @@ KEY CONSTRAINTS:
   - Must run on a single developer machine (local-first)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SECTION 1 — MONOREPO DIRECTORY STRUCTURE (CREATE EXACTLY THIS)
+SECTION 1 - MONOREPO DIRECTORY STRUCTURE (CREATE EXACTLY THIS)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 cmdb-graph/
@@ -178,7 +178,7 @@ cmdb-graph/
 │           └── api.ts                # API response types
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SECTION 2 — INFRASTRUCTURE & DOCKER
+SECTION 2 - INFRASTRUCTURE & DOCKER
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 CREATE docker-compose.yml:

@@ -24,8 +24,8 @@ InfraNexus renders ServiceNow CMDB infrastructure as an interactive 3D WebGL for
 
 ### Three.js / react-force-graph-3d
 - **ALWAYS dynamically import** the graph component (`dynamic(() => import(...), { ssr: false })`)
-- Three.js + force-graph bundle is ~700KB — NEVER include in initial bundle
-- WebGL cannot render server-side — set `ssr: false` on graph imports
+- Three.js + force-graph bundle is ~700KB - NEVER include in initial bundle
+- WebGL cannot render server-side - set `ssr: false` on graph imports
 - Max visible nodes: 500 default, 2000 absolute maximum
 - Use `InstancedMesh` when rendering 500+ nodes of the same class
 - Implement Level-of-Detail (LOD): full mesh at close range, point sprites at distance
@@ -57,7 +57,7 @@ Three stores, never mix concerns:
 3. **etlStore**: status, progress, lastSync, totalCIs, totalRelationships
 
 ```typescript
-// ALWAYS use Map for nodes/edges — O(1) lookup by ID
+// ALWAYS use Map for nodes/edges - O(1) lookup by ID
 nodes: Map<string, GraphNode>
 edges: Map<string, GraphLink>
 
@@ -77,7 +77,7 @@ When expanding a node's neighborhood:
 - Use direct `fetch` for neighborhood expansion (imperative, not cached by SWR)
 - Debounce search input: 150ms
 - API base URL from `NEXT_PUBLIC_API_URL` (default: `http://localhost:8000`)
-- Frontend calls FastAPI backend directly — NO Next.js API proxy routes
+- Frontend calls FastAPI backend directly - NO Next.js API proxy routes
 - Typed API client in `lib/api.ts`
 
 ### Component Rules

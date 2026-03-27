@@ -1,4 +1,4 @@
-# InfraNexus — Features & Required Skills
+# InfraNexus - Features & Required Skills
 
 ---
 
@@ -19,7 +19,7 @@
 | 9 | **Node Type Filtering** | Toggle CI class visibility (checkboxes for Server, DB, App, etc.) | Low |
 | 10 | **Environment Filtering** | Filter by production/development/test/staging | Low |
 | 11 | **ETL: Full Sync** | Bulk ingest all CIs + relationships from ServiceNow into Kuzu + Meilisearch | High |
-| 12 | **ETL: Incremental Sync** | Delta sync using `sys_updated_on` — only changed records | High |
+| 12 | **ETL: Incremental Sync** | Delta sync using `sys_updated_on` - only changed records | High |
 | 13 | **Redis Caching** | Read-through cache for neighborhoods, CI details, search results | Medium |
 | 14 | **Camera Animation** | Smooth fly-to when selecting/searching a CI | Low |
 | 15 | **Dark/Light Theme** | Full theme support with consistent CI colors across themes | Low |

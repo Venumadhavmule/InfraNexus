@@ -22,7 +22,7 @@ class StubKuzuManager:
     """No-op Kuzu manager that returns empty results for all queries."""
 
     def __init__(self, db_path: str = "") -> None:
-        log.info("stub_kuzu.initialized", note="Kuzu is DISABLED — returning empty results")
+        log.info("stub_kuzu.initialized", note="Kuzu is DISABLED - returning empty results")
 
     async def bootstrap_schema(self) -> None:
         log.info("stub_kuzu.schema_skipped")
@@ -51,7 +51,7 @@ class StubRedisManager:
     """No-op Redis manager that always misses cache and allows all rate limits."""
 
     def __init__(self, url: str = "") -> None:
-        log.info("stub_redis.initialized", note="Redis is DISABLED — no caching")
+        log.info("stub_redis.initialized", note="Redis is DISABLED - no caching")
 
     async def connect(self) -> None:
         log.info("stub_redis.connect_skipped")
@@ -90,7 +90,7 @@ class StubMeiliManager:
     """No-op Meilisearch manager that returns empty search results."""
 
     def __init__(self, url: str = "", master_key: str = "") -> None:
-        log.info("stub_meili.initialized", note="Meilisearch is DISABLED — search unavailable")
+        log.info("stub_meili.initialized", note="Meilisearch is DISABLED - search unavailable")
 
     async def connect(self) -> None:
         log.info("stub_meili.connect_skipped")

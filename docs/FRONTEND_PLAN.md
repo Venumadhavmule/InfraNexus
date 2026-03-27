@@ -1,4 +1,4 @@
-# InfraNexus — Frontend Architecture Plan
+# InfraNexus - Frontend Architecture Plan
 
 > **Version**: 1.0 | **Author**: InfraNexus Architecture Team | **Stack**: Next.js 15 + React 19 + Three.js + Zustand + shadcn/ui
 
@@ -30,7 +30,7 @@ The InfraNexus frontend is a **Next.js application** that renders ServiceNow CMD
 
 ### Core UX Principles
 
-1. **Graph-first**: The 3D graph IS the application — everything else serves it
+1. **Graph-first**: The 3D graph IS the application - everything else serves it
 2. **Progressive disclosure**: Start with a single CI, expand outward by clicking
 3. **Never overwhelm**: Max ~500 visible nodes, always subgraph, always filterable
 4. **Instant feedback**: Search < 50ms, click-to-expand < 200ms (perceived)
@@ -126,7 +126,7 @@ The InfraNexus frontend is a **Next.js application** that renders ServiceNow CMD
 | three-spritetext | Text labels on nodes | ~5 KB |
 | d3-force-3d | Force simulation engine | ~30 KB |
 
-**Total graph bundle: ~700 KB** — MUST be dynamically imported.
+**Total graph bundle: ~700 KB** - MUST be dynamically imported.
 
 ### 3.3 State & Data
 
@@ -173,7 +173,7 @@ Based on benchmarking react-force-graph-3d:
 Each CI is rendered as a 3D mesh. Type determines shape, status determines color:
 
 ```typescript
-// NodeObject.tsx — Factory for Three.js node meshes
+// NodeObject.tsx - Factory for Three.js node meshes
 import * as THREE from 'three';
 import SpriteText from 'three-spritetext';
 
@@ -244,7 +244,7 @@ export function createNodeMesh(node: GraphNode): THREE.Object3D {
 ### 4.3 Edge Rendering
 
 ```typescript
-// EdgeObject.tsx — Relationship visualization
+// EdgeObject.tsx - Relationship visualization
 const REL_TYPE_STYLES: Record<string, { color: string; dashed: boolean; width: number }> = {
   'Runs on':        { color: '#818CF8', dashed: false, width: 1.5 },
   'Hosted on':      { color: '#A78BFA', dashed: false, width: 1.5 },
@@ -264,7 +264,7 @@ const REL_TYPE_STYLES: Record<string, { color: string; dashed: boolean; width: n
 ### 4.4 Camera Control & Animation
 
 ```typescript
-// useCamera.ts — Camera animation helpers
+// useCamera.ts - Camera animation helpers
 export function useCamera(graphRef: React.RefObject<ForceGraph3D>) {
   const flyToNode = useCallback((node: GraphNode, distance = 200) => {
     const graph = graphRef.current;
@@ -296,7 +296,7 @@ export function useCamera(graphRef: React.RefObject<ForceGraph3D>) {
 ### 4.5 Force Simulation Configuration
 
 ```typescript
-// GraphCanvas.tsx — D3 force simulation tuning
+// GraphCanvas.tsx - D3 force simulation tuning
 const FORCE_CONFIG = {
   // Charge: negative = repulsion between nodes
   charge: {
@@ -522,8 +522,8 @@ interface ETLState {
 |-----------|---------------|-------------------|
 | `CMDBGraph` | Root graph wrapper, loading/error states | graphStore.nodes |
 | `GraphCanvas` | ForceGraph3D instance, Three.js scene | graphStore.filteredNodes |
-| `NodeObject` | THREE.js mesh factory per CI class | — (pure function) |
-| `EdgeObject` | Edge line/arrow rendering | — (pure function) |
+| `NodeObject` | THREE.js mesh factory per CI class | - (pure function) |
+| `EdgeObject` | Edge line/arrow rendering | - (pure function) |
 | `MiniMap` | 2D canvas overview of graph bounds | graphStore.filteredNodes |
 | `GraphStats` | Badge showing node/edge counts | graphStore.nodes.size |
 | `SearchBar` | Input + autocomplete dropdown | useSearch hook |
@@ -548,7 +548,7 @@ import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 import { GraphSkeleton } from '@/components/graph/GraphSkeleton';
 
-// Dynamic import — Three.js is 700KB, must not be in initial bundle
+// Dynamic import - Three.js is 700KB, must not be in initial bundle
 const CMDBGraph = dynamic(() => import('@/components/graph/CMDBGraph'), {
   ssr: false,  // WebGL cannot render server-side
   loading: () => <GraphSkeleton />,
@@ -578,7 +578,7 @@ export default function GraphPage() {
 ### 7.1 API Client
 
 ```typescript
-// lib/api.ts — Typed fetch client
+// lib/api.ts - Typed fetch client
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 class InfraNexusAPI {
@@ -659,7 +659,7 @@ export const api = new InfraNexusAPI();
 
 ### 7.2 Graph Merge Logic
 
-The most critical client-side algorithm — merging new neighborhoods into the existing graph WITHOUT duplicates or layout reset:
+The most critical client-side algorithm - merging new neighborhoods into the existing graph WITHOUT duplicates or layout reset:
 
 ```typescript
 // lib/graphMerge.ts
@@ -833,7 +833,7 @@ export default {
     optimizePackageImports: ['three', '@react-three/fiber'],
   },
   webpack: (config) => {
-    // Tree-shake Three.js — only import what we use
+    // Tree-shake Three.js - only import what we use
     config.resolve.alias = {
       ...config.resolve.alias,
       'three': 'three/src/Three.js', // Enable deep tree-shaking
@@ -857,7 +857,7 @@ function getNodeDetail(cameraDistance: number): 'high' | 'medium' | 'low' {
 // Instead of individual Mesh per node, use InstancedMesh for nodes of same type
 function createInstancedNodes(nodes: GraphNode[]): THREE.InstancedMesh {
   const grouped = groupBy(nodes, n => n.ci_class);
-  // One InstancedMesh per CI class — reduces draw calls from N to ~13
+  // One InstancedMesh per CI class - reduces draw calls from N to ~13
 }
 ```
 
@@ -886,7 +886,7 @@ function enforceNodeLimit(nodes: GraphNode[]): GraphNode[] {
 ### 9.4 Initial Load Sequence
 
 ```
-1. [0ms]    HTML shell loads (SSR from Next.js — instant)
+1. [0ms]    HTML shell loads (SSR from Next.js - instant)
 2. [100ms]  Tailwind CSS + layout renders
 3. [200ms]  SearchBar + panels render (small JS)
 4. [300ms]  GraphSkeleton shows (loading animation)

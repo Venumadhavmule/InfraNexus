@@ -4,7 +4,7 @@ from httpx import ASGITransport, AsyncClient
 
 @pytest.fixture
 async def client():
-    """Minimal test client — only tests health endpoints that don't require infra."""
+    """Minimal test client - only tests health endpoints that don't require infra."""
     from app.main import create_app
     from app.core.stubs import StubKuzuManager, StubRedisManager, StubMeiliManager
 

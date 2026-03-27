@@ -1,4 +1,4 @@
-# InfraNexus — Backend Architecture Plan
+# InfraNexus - Backend Architecture Plan
 
 > **Version**: 1.0 | **Author**: InfraNexus Architecture Team | **Stack**: FastAPI + Kuzu + Redis + Meilisearch
 
@@ -9,11 +9,11 @@
 1. [Executive Summary](#1-executive-summary)
 2. [Architecture Overview](#2-architecture-overview)
 3. [ServiceNow CMDB Data Model](#3-servicenow-cmdb-data-model)
-4. [Graph Database Layer — Kuzu](#4-graph-database-layer--kuzu)
-5. [ETL Pipeline — ServiceNow Ingestion](#5-etl-pipeline--servicenow-ingestion)
-6. [API Layer — FastAPI](#6-api-layer--fastapi)
-7. [Search Engine — Meilisearch](#7-search-engine--meilisearch)
-8. [Caching Layer — Redis](#8-caching-layer--redis)
+4. [Graph Database Layer - Kuzu](#4-graph-database-layer--kuzu)
+5. [ETL Pipeline - ServiceNow Ingestion](#5-etl-pipeline--servicenow-ingestion)
+6. [API Layer - FastAPI](#6-api-layer--fastapi)
+7. [Search Engine - Meilisearch](#7-search-engine--meilisearch)
+8. [Caching Layer - Redis](#8-caching-layer--redis)
 9. [WebSocket Real-Time Layer](#9-websocket-real-time-layer)
 10. [Performance Engineering](#10-performance-engineering)
 11. [Security Architecture](#11-security-architecture)
@@ -233,7 +233,7 @@ Based on production CMDB analysis at enterprise scale (500K-2M CIs):
 
 | Metric | Value | Implication |
 |--------|-------|-------------|
-| Average degree | 3-4 edges/CI | Sparse graph — good for Kuzu |
+| Average degree | 3-4 edges/CI | Sparse graph - good for Kuzu |
 | Degree distribution | Power-law (heavy tail) | Super-nodes exist |
 | Super-node degree | 50-2000 edges | Business services, core switches, LBs |
 | Graph diameter | 6-10 hops | Small-world property |
@@ -252,7 +252,7 @@ Based on production CMDB analysis at enterprise scale (500K-2M CIs):
 
 ---
 
-## 4. Graph Database Layer — Kuzu
+## 4. Graph Database Layer - Kuzu
 
 ### 4.1 Why Kuzu
 
@@ -396,7 +396,7 @@ async def bulk_load_relationships(csv_path: str):
 
 ---
 
-## 5. ETL Pipeline — ServiceNow Ingestion
+## 5. ETL Pipeline - ServiceNow Ingestion
 
 ### 5.1 Architecture
 
@@ -589,7 +589,7 @@ class CIValidator:
 
 ---
 
-## 6. API Layer — FastAPI
+## 6. API Layer - FastAPI
 
 ### 6.1 Router Overview
 
@@ -731,7 +731,7 @@ app = FastAPI(
 
 ---
 
-## 7. Search Engine — Meilisearch
+## 7. Search Engine - Meilisearch
 
 ### 7.1 Index Configuration
 
@@ -808,7 +808,7 @@ class SearchService:
 
 ---
 
-## 8. Caching Layer — Redis
+## 8. Caching Layer - Redis
 
 ### 8.1 Cache Strategy
 
@@ -816,7 +816,7 @@ class SearchService:
 Layer 1: NEIGHBORHOOD CACHE (Redis Hash)
   Key: "nb:{ci_id}:{hops}:{filter_hash}"
   Value: Serialized GraphResponse (msgpack)
-  TTL: 300s (5 min) — matches incremental sync interval
+  TTL: 300s (5 min) - matches incremental sync interval
   Strategy: Read-through (query Kuzu on miss, cache result)
 
 Layer 2: CI DETAIL CACHE (Redis Hash)
@@ -828,7 +828,7 @@ Layer 2: CI DETAIL CACHE (Redis Hash)
 Layer 3: SEARCH CACHE (Redis String)
   Key: "search:{query_hash}"
   Value: Search results JSON
-  TTL: 60s (1 min) — search results change more frequently
+  TTL: 60s (1 min) - search results change more frequently
   Strategy: Read-through
 
 Layer 4: ETL STATE (Redis Hash)
@@ -925,7 +925,7 @@ class ConnectionManager:
 
 ### 10.1 Kuzu Query Optimization
 
-1. **Indexed lookups**: Primary key index on `sys_id` — O(1) node lookup
+1. **Indexed lookups**: Primary key index on `sys_id` - O(1) node lookup
 2. **Degree pre-computation**: Store degree on CI node, updated during ETL
 3. **Super-node guards**: Never expand nodes with degree > threshold in neighborhood queries
 4. **Result streaming**: Use Kuzu's result iterator, don't materialize full result sets
@@ -974,7 +974,7 @@ class LayoutService:
 - All path parameters validated via Pydantic (sys_id format: 32 hex chars)
 - Query parameters bounded (hops: 1-3, max_nodes: 10-2000)
 - Rate limiting: 100 req/min per IP via Redis sliding window
-- No raw Cypher injection — all queries use parameterized statements
+- No raw Cypher injection - all queries use parameterized statements
 
 ### 11.3 ServiceNow Credentials
 
@@ -1012,7 +1012,7 @@ logger.info("neighborhood_query", ci_id=ci_id, hops=hops,
 | `infranexus_cache_misses_total` | Counter | cache_type |
 | `infranexus_etl_records_processed` | Counter | record_type |
 | `infranexus_etl_sync_duration_seconds` | Gauge | sync_type |
-| `infranexus_active_ws_connections` | Gauge | — |
+| `infranexus_active_ws_connections` | Gauge | - |
 
 ---
 

@@ -24,10 +24,10 @@ InfraNexus is a full-stack application that renders ServiceNow CMDB Configuratio
 ## Architecture Rules
 
 ### Kuzu (Graph Database)
-- Kuzu is **embedded** — runs in the same process as FastAPI
+- Kuzu is **embedded** - runs in the same process as FastAPI
 - **Single writer** constraint: Use `asyncio.Lock()` for all write operations
 - Use a **reader connection pool** (4 connections matching CPU cores) for concurrent reads
-- All Cypher queries MUST be **parameterized** — never use string interpolation (SQL injection equivalent)
+- All Cypher queries MUST be **parameterized** - never use string interpolation (SQL injection equivalent)
 - Use `COPY` command for bulk loading (not individual INSERT)
 - Primary key on `sys_id` (STRING, 32 hex chars)
 - Pre-compute `degree` and `cluster_id` on CI nodes during ETL
@@ -80,7 +80,7 @@ LIMIT $max_nodes;
 ### Error Handling
 - Custom exception hierarchy: `InfraNexusError` → `CINotFoundError`, `KuzuQueryError`, etc.
 - Global exception handler maps exceptions to HTTP status codes
-- Never expose internal errors to clients — wrap in generic message
+- Never expose internal errors to clients - wrap in generic message
 - Log errors with structlog including request_id for correlation
 
 ### Code Style

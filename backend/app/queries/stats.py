@@ -1,4 +1,4 @@
-# All Cypher queries are parameterized constants — never dynamically constructed.
+# All Cypher queries are parameterized constants - never dynamically constructed.
 
 GRAPH_STATS = """
 MATCH (c:CI)

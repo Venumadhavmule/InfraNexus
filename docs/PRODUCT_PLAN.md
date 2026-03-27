@@ -1,4 +1,4 @@
-# InfraNexus — Complete Product Plan
+# InfraNexus - Complete Product Plan
 
 > **ServiceNow CMDB Graph Visualizer** | Production-Grade | 1M+ CI Scale | GitNexus-Style
 > 
@@ -33,15 +33,15 @@
 
 ## 1. Product Vision
 
-**InfraNexus** transforms the flat, tabular ServiceNow CMDB into a living, explorable 3D graph — revealing the hidden topology of enterprise infrastructure at a glance.
+**InfraNexus** transforms the flat, tabular ServiceNow CMDB into a living, explorable 3D graph - revealing the hidden topology of enterprise infrastructure at a glance.
 
-Built for a single developer machine, it ingests millions of CIs via incremental ETL, stores them in an embedded graph database, and renders explorable subgraphs in WebGL — all without a cloud dependency.
+Built for a single developer machine, it ingests millions of CIs via incremental ETL, stores them in an embedded graph database, and renders explorable subgraphs in WebGL - all without a cloud dependency.
 
 ### One-line Pitch
-> *"See your entire infrastructure as a living galaxy you can fly through, search, and explore — powered by your ServiceNow CMDB."*
+> *"See your entire infrastructure as a living galaxy you can fly through, search, and explore - powered by your ServiceNow CMDB."*
 
 ### Inspiration
-[GitNexus](https://gitnexus.vercel.app) — but for infrastructure instead of code repositories.
+[GitNexus](https://gitnexus.vercel.app) - but for infrastructure instead of code repositories.
 
 ---
 
@@ -53,7 +53,7 @@ ServiceNow CMDB contains the richest data about an organization's infrastructure
 
 | Problem | Impact |
 |---------|--------|
-| **Flat tables** | CIs shown in lists — no topology awareness |
+| **Flat tables** | CIs shown in lists - no topology awareness |
 | **Relationship blindness** | "Depends on" chains invisible without manual clicks |
 | **Impact assessment is manual** | "What breaks if this server goes down?" requires expert knowledge |
 | **CMDB data rots** | Without visualization, stale/orphan CIs go unnoticed |
@@ -64,7 +64,7 @@ ServiceNow CMDB contains the richest data about an organization's infrastructure
 
 1. **Graph-first rendering**: Every CI is a 3D node, every relationship is an edge
 2. **Progressive exploration**: Start from any CI, expand outward via click
-3. **Scale**: Handle 1M+ CIs via subgraph loading — never freeze the browser
+3. **Scale**: Handle 1M+ CIs via subgraph loading - never freeze the browser
 4. **Search**: Find any CI in < 50ms across a million records
 5. **Filtering**: Slice by class, environment, status, relationship type
 6. **Offline**: Last explored subgraph available without connectivity
@@ -269,7 +269,7 @@ ServiceNow's CMDB is a **single-table inheritance** model rooted at `cmdb_ci`:
 ### 6.2 CI Hierarchy (Simplified)
 
 ```
-cmdb_ci (Base — all CIs inherit from this)
+cmdb_ci (Base - all CIs inherit from this)
 │
 ├── COMPUTE
 │   ├── cmdb_ci_server (Physical servers)
@@ -327,7 +327,7 @@ Relationship direction in CMDB follows **parent → child** convention:
 | 2-hop neighborhood size | 10-50 | 20-200 | 50-500 | 50-1000 |
 | 3-hop neighborhood size | 50-200 | 200-2000 | 500-5000 | 1000-50000 |
 
-**Critical insight**: 3-hop at enterprise scale can return 50K nodes — MUST enforce max_nodes and degree_threshold.
+**Critical insight**: 3-hop at enterprise scale can return 50K nodes - MUST enforce max_nodes and degree_threshold.
 
 ### 6.5 Common Dependency Chains
 
@@ -351,7 +351,7 @@ Business Service (CRM)
                     └── Connected by → Router (core-rtr-01)
 ```
 
-This single business service has a **7-level deep dependency chain** with **~30 CIs**. At 2-hop expansion with the service as center, you'd see ~15 CIs — perfect for visualization.
+This single business service has a **7-level deep dependency chain** with **~30 CIs**. At 2-hop expansion with the service as center, you'd see ~15 CIs - perfect for visualization.
 
 ---
 
@@ -657,20 +657,20 @@ WEBSOCKET:
 
 | Feature | Backend | Frontend | Priority |
 |---------|---------|----------|----------|
-| ETL: Full sync from ServiceNow | ✅ | — | P0 |
-| ETL: Incremental sync | ✅ | — | P0 |
+| ETL: Full sync from ServiceNow | ✅ | - | P0 |
+| ETL: Incremental sync | ✅ | - | P0 |
 | Graph: k-hop neighborhood | ✅ | ✅ | P0 |
 | Search: Full-text + autocomplete | ✅ | ✅ | P0 |
-| 3D WebGL graph rendering | — | ✅ | P0 |
+| 3D WebGL graph rendering | - | ✅ | P0 |
 | CI Inspector panel | ✅ | ✅ | P0 |
-| Node type filtering | — | ✅ | P0 |
-| Environment filtering | — | ✅ | P0 |
-| Dark/light theme | — | ✅ | P1 |
+| Node type filtering | - | ✅ | P0 |
+| Environment filtering | - | ✅ | P0 |
+| Dark/light theme | - | ✅ | P1 |
 | Hop depth control | ✅ | ✅ | P1 |
-| Keyboard shortcuts | — | ✅ | P1 |
-| Redis caching | ✅ | — | P0 |
-| Rate limiting | ✅ | — | P1 |
-| Health checks | ✅ | — | P0 |
+| Keyboard shortcuts | - | ✅ | P1 |
+| Redis caching | ✅ | - | P0 |
+| Rate limiting | ✅ | - | P1 |
+| Health checks | ✅ | - | P0 |
 | Docker Compose setup | ✅ | ✅ | P0 |
 
 ### Extended (Phase 4-5, Weeks 7-10)
@@ -680,17 +680,17 @@ WEBSOCKET:
 | Shortest path | ✅ | ✅ | P1 |
 | Cluster overview | ✅ | ✅ | P1 |
 | WebSocket ETL updates | ✅ | ✅ | P1 |
-| Relationship type filtering | — | ✅ | P1 |
-| MiniMap | — | ✅ | P2 |
+| Relationship type filtering | - | ✅ | P1 |
+| MiniMap | - | ✅ | P2 |
 | CI Timeline | ✅ | ✅ | P2 |
-| Multiple layout algorithms | — | ✅ | P2 |
-| Server-side layout | ✅ | — | P2 |
-| Community detection | ✅ | — | P2 |
-| Context menu | — | ✅ | P2 |
-| Offline mode | — | ✅ | P2 |
-| Graph export (image) | — | ✅ | P2 |
-| Prometheus metrics | ✅ | — | P2 |
-| Edge type filtering | — | ✅ | P1 |
+| Multiple layout algorithms | - | ✅ | P2 |
+| Server-side layout | ✅ | - | P2 |
+| Community detection | ✅ | - | P2 |
+| Context menu | - | ✅ | P2 |
+| Offline mode | - | ✅ | P2 |
+| Graph export (image) | - | ✅ | P2 |
+| Prometheus metrics | ✅ | - | P2 |
+| Edge type filtering | - | ✅ | P1 |
 
 ### Future (Phase 6+)
 
@@ -801,10 +801,10 @@ docker compose exec backend python -m etl.runner --mode full
 | Service | Image | Ports | Volumes |
 |---------|-------|-------|---------|
 | backend | Custom (Python 3.12) | 8000 | ./backend, kuzu_data |
-| frontend | Custom (Node 22) | 3000 | — |
+| frontend | Custom (Node 22) | 3000 | - |
 | redis | redis:7.2-alpine | 6379 | redis_data |
 | meilisearch | getmeili/meilisearch:v1.6 | 7700 | meili_data |
-| redis-insight | redislabs/redisinsight | 8001 | — |
+| redis-insight | redislabs/redisinsight | 8001 | - |
 
 ### 14.3 Makefile Targets
 
