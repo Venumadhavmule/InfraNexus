@@ -16,12 +16,8 @@ import { useKeyboardNav } from "@/hooks/useKeyboardNav";
 import { getNodeConfig, getStatusOpacity } from "@/lib/colorMap";
 import { getEdgeStyle } from "@/lib/edgeStyles";
 import {
-  FORCE_CHARGE_STRENGTH,
-  FORCE_LINK_DISTANCE,
   FORCE_WARMUP_TICKS,
   FORCE_COOLDOWN_TIME,
-  LABEL_VISIBILITY_DISTANCE,
-  NODE_HOVER_SCALE,
   EDGE_PARTICLE_COUNT,
   EDGE_PARTICLE_SPEED,
 } from "@/lib/constants";
@@ -36,7 +32,6 @@ export function GraphCanvas() {
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
   const selectedNodeId = useGraphStore((s) => s.selectedNodeId);
-  const hoveredNodeId = useGraphStore((s) => s.hoveredNodeId);
   const selectNode = useGraphStore((s) => s.selectNode);
   const hoverNode = useGraphStore((s) => s.hoverNode);
   const pathHighlight = useGraphStore((s) => s.pathHighlight);
@@ -80,8 +75,6 @@ export function GraphCanvas() {
     if (node) flyToNode(node);
   }, [selectedNodeId, flyToNode]);
 
-  const pathSet = new Set(pathHighlight);
-
   const handleNodeClick = useCallback(
     (node: GraphNode) => {
       selectNode(node.id);
@@ -111,10 +104,9 @@ export function GraphCanvas() {
       const config = getNodeConfig(node.ci_class);
       const opacity = getStatusOpacity(node.operational_status);
       const isSelected = node.id === selectedNodeId;
-      const isHovered = node.id === hoveredNodeId;
-      const isOnPath = pathSet.has(node.id);
+      const isOnPath = pathHighlight.includes(node.id);
 
-      const scale = isHovered ? NODE_HOVER_SCALE : isSelected ? 1.2 : 1;
+      const scale = isSelected ? 1.2 : 1;
       const size = config.size * scale;
 
       // Create geometry based on shape
@@ -149,9 +141,9 @@ export function GraphCanvas() {
       const material = new THREE.MeshLambertMaterial({
         color,
         transparent: true,
-        opacity: opacity * (isOnPath ? 1 : isSelected || isHovered ? 1 : 0.85),
+        opacity: opacity * (isOnPath ? 1 : isSelected ? 1 : 0.85),
         emissive: color,
-        emissiveIntensity: isSelected ? 0.6 : isHovered ? 0.4 : config.glowIntensity,
+        emissiveIntensity: isSelected ? 0.6 : config.glowIntensity,
       });
 
       const mesh = new THREE.Mesh(geometry, material);
@@ -167,7 +159,7 @@ export function GraphCanvas() {
 
       return mesh;
     },
-    [selectedNodeId, hoveredNodeId, showLabels, pathSet],
+    [pathHighlight, selectedNodeId, showLabels],
   );
 
   const linkColor = useCallback(

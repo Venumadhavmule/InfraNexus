@@ -10,7 +10,7 @@ import { StatusBar } from "@/components/ui/StatusBar";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { useNeighborhood } from "@/hooks/useNeighborhood";
-import { fetchGraphStats } from "@/lib/api";
+import { fetchETLStatus, fetchGraphStats, triggerSync } from "@/lib/api";
 import { useGraphStore } from "@/store/graphStore";
 import { useUIStore } from "@/store/uiStore";
 import { useETLStore } from "@/store/etlStore";
@@ -27,6 +27,8 @@ export default function GraphPage() {
   const loading = useGraphStore((s) => s.loading);
   const etlStatus = useETLStore((s) => s.status);
   const lastSyncTimestamp = useETLStore((s) => s.lastSyncTimestamp);
+  const setFromStatus = useETLStore((s) => s.setFromStatus);
+  const handleWSEvent = useETLStore((s) => s.handleWSEvent);
 
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel);
   const toggleRightPanel = useUIStore((s) => s.toggleRightPanel);
@@ -37,15 +39,55 @@ export default function GraphPage() {
   useEffect(() => {
     let cancelled = false;
 
+    const loadStatus = async () => {
+      try {
+        const status = await fetchETLStatus();
+        if (!cancelled) {
+          setFromStatus(status);
+        }
+      } catch {
+        // Ignore ETL status bootstrap errors.
+      }
+    };
+
+    void loadStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setFromStatus]);
+
+  useEffect(() => {
+    let cancelled = false;
+
     const tryLoadStarterScene = async () => {
       if (nodeCount > 0 || loading) {
         return;
       }
 
       try {
+        const status = await fetchETLStatus();
         const stats = await fetchGraphStats();
-        if (!cancelled && stats.total_nodes > 0) {
+        if (cancelled) {
+          return;
+        }
+
+        setFromStatus(status);
+
+        if (stats.total_nodes > 0) {
           await loadStarterScene();
+          return;
+        }
+
+        if (status.status === "idle") {
+          const response = await triggerSync("full");
+          if (!cancelled) {
+            handleWSEvent({
+              type: "sync_started",
+              sync_id: response.sync_id,
+              sync_type: response.type,
+            });
+          }
         }
       } catch {
         // Keep the page usable even if stats or starter-scene load fails.
@@ -57,7 +99,7 @@ export default function GraphPage() {
     return () => {
       cancelled = true;
     };
-  }, [nodeCount, loading, etlStatus, lastSyncTimestamp, loadStarterScene]);
+  }, [nodeCount, loading, etlStatus, lastSyncTimestamp, loadStarterScene, setFromStatus, handleWSEvent]);
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-background">

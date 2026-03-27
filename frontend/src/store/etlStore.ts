@@ -1,6 +1,19 @@
 import { create } from "zustand";
 import type { SyncStatus, SyncType, WSEvent } from "@/types";
 
+const STAGE_PROGRESS: Record<string, number> = {
+  resetting_tables: 5,
+  fetching_rel_types: 10,
+  fetching_cis: 20,
+  loading_cis: 45,
+  fetching_relationships: 60,
+  loading_relationships: 80,
+  updating_degrees: 90,
+  indexing_search: 95,
+  fetching_changed_cis: 35,
+  fetching_changed_relationships: 70,
+};
+
 interface ETLState {
   status: SyncStatus;
   progress: number; // 0-100
@@ -56,7 +69,7 @@ export const useETLStore = create<ETLState>((set) => ({
         });
         break;
       case "sync_progress":
-        set({ progress: event.progress ?? 0 });
+        set({ progress: event.progress ?? (event.stage ? STAGE_PROGRESS[event.stage] ?? 0 : 0) });
         break;
       case "sync_completed":
         set({
@@ -70,6 +83,7 @@ export const useETLStore = create<ETLState>((set) => ({
           lastError: null,
         });
         break;
+      case "sync_error":
       case "sync_failed":
         set({
           status: "failed",

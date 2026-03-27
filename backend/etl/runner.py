@@ -107,6 +107,7 @@ class ETLRunner:
             )
             await self._broadcast("sync_completed", {
                 "sync_id": sync_id,
+                "sync_type": "full",
                 "ci_count": ci_count,
                 "rel_count": rel_count,
                 "duration_seconds": round(duration, 2),
@@ -175,6 +176,7 @@ class ETLRunner:
             )
             await self._broadcast("sync_completed", {
                 "sync_id": sync_id,
+                "sync_type": "incremental",
                 "ci_count": ci_count,
                 "rel_count": rel_count,
                 "duration_seconds": round(duration, 2),

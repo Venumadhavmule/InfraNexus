@@ -136,10 +136,11 @@ export interface SearchFilters {
 }
 
 export interface WSEvent {
-  type: "sync_started" | "sync_progress" | "sync_completed" | "sync_failed";
+  type: "sync_started" | "sync_progress" | "sync_completed" | "sync_failed" | "sync_error";
   sync_id?: string;
   sync_type?: SyncType;
   progress?: number;
+  stage?: string;
   message?: string;
   ci_count?: number;
   rel_count?: number;

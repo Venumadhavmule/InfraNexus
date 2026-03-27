@@ -1,14 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { useUIStore } from "@/store/uiStore";
+import { useETLStore } from "@/store/etlStore";
 import { HopDepthControl } from "@/components/controls/HopDepthControl";
 import { NodeTypeFilter } from "@/components/controls/NodeTypeFilter";
 import { EdgeTypeFilter } from "@/components/controls/EdgeTypeFilter";
 import { LayoutSelector } from "@/components/controls/LayoutSelector";
 import { ThemeToggle } from "@/components/controls/ThemeToggle";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { triggerSync } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export function RightPanel() {
@@ -17,6 +21,29 @@ export function RightPanel() {
   const showParticles = useUIStore((s) => s.showParticles);
   const toggleLabels = useUIStore((s) => s.toggleLabels);
   const toggleParticles = useUIStore((s) => s.toggleParticles);
+  const etlStatus = useETLStore((s) => s.status);
+  const handleWSEvent = useETLStore((s) => s.handleWSEvent);
+  const [syncLoading, setSyncLoading] = useState<"full" | "incremental" | null>(null);
+
+  const startSync = async (type: "full" | "incremental") => {
+    if (etlStatus === "running") return;
+    setSyncLoading(type);
+    try {
+      const response = await triggerSync(type);
+      handleWSEvent({
+        type: "sync_started",
+        sync_id: response.sync_id,
+        sync_type: response.type,
+      });
+    } catch {
+      handleWSEvent({
+        type: "sync_error",
+        error: `Failed to start ${type} sync`,
+      });
+    } finally {
+      setSyncLoading(null);
+    }
+  };
 
   return (
     <div
@@ -32,6 +59,28 @@ export function RightPanel() {
         </div>
         <ScrollArea className="flex-1">
           <div className="space-y-4 p-4">
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground">Sync</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => startSync("incremental")}
+                  disabled={etlStatus === "running" || syncLoading !== null}
+                >
+                  {syncLoading === "incremental" ? "Syncing..." : "Sync Latest"}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => startSync("full")}
+                  disabled={etlStatus === "running" || syncLoading !== null}
+                >
+                  {syncLoading === "full" ? "Reloading..." : "Full Reload"}
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
             <HopDepthControl />
             <Separator />
             <LayoutSelector />

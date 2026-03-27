@@ -4,10 +4,8 @@ import { useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { useSearch } from "@/hooks/useSearch";
 import { useUIStore } from "@/store/uiStore";
-import { useGraphStore } from "@/store/graphStore";
 import { useNeighborhood } from "@/hooks/useNeighborhood";
 import { SearchResults } from "./SearchResults";
-import { cn } from "@/lib/utils";
 import { isValidSysId } from "@/lib/utils";
 
 export function SearchBar() {

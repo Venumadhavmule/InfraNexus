@@ -66,8 +66,6 @@ export function useNeighborhood() {
       try {
         const opts = getNeighborhoodOptions();
         const response = await fetchNeighborhood(ciId, opts);
-        const { nodes: newNodes, edges: newEdges } = responseToMaps(response);
-
         const merged = mergeNeighborhood(nodes, edges, response);
         mergeGraph(merged.nodes, merged.edges);
         markExpanded(ciId);
