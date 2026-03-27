@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { CMDBGraph } from "@/components/graph/CMDBGraph";
 import { GraphStats } from "@/components/graph/GraphStats";
 import { SearchBar } from "@/components/search/SearchBar";
@@ -8,7 +9,11 @@ import { RightPanel } from "@/components/panels/RightPanel";
 import { StatusBar } from "@/components/ui/StatusBar";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useDarkMode } from "@/hooks/useDarkMode";
+import { useNeighborhood } from "@/hooks/useNeighborhood";
+import { fetchGraphStats } from "@/lib/api";
+import { useGraphStore } from "@/store/graphStore";
 import { useUIStore } from "@/store/uiStore";
+import { useETLStore } from "@/store/etlStore";
 import { Button } from "@/components/ui/button";
 
 export default function GraphPage() {
@@ -17,11 +22,42 @@ export default function GraphPage() {
   // Connect ETL WebSocket
   useWebSocket();
 
+  const { loadStarterScene } = useNeighborhood();
+  const nodeCount = useGraphStore((s) => s.nodes.size);
+  const loading = useGraphStore((s) => s.loading);
+  const etlStatus = useETLStore((s) => s.status);
+  const lastSyncTimestamp = useETLStore((s) => s.lastSyncTimestamp);
+
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel);
   const toggleRightPanel = useUIStore((s) => s.toggleRightPanel);
   const setSearchOpen = useUIStore((s) => s.setSearchOpen);
   const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const tryLoadStarterScene = async () => {
+      if (nodeCount > 0 || loading) {
+        return;
+      }
+
+      try {
+        const stats = await fetchGraphStats();
+        if (!cancelled && stats.total_nodes > 0) {
+          await loadStarterScene();
+        }
+      } catch {
+        // Keep the page usable even if stats or starter-scene load fails.
+      }
+    };
+
+    void tryLoadStarterScene();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [nodeCount, loading, etlStatus, lastSyncTimestamp, loadStarterScene]);
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-background">

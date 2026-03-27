@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { fetchNeighborhood } from "@/lib/api";
+import { fetchNeighborhood, fetchStarterScene } from "@/lib/api";
 import { responseToMaps, mergeNeighborhood } from "@/lib/graphMerge";
 import { useGraphStore } from "@/store/graphStore";
 
@@ -41,6 +41,23 @@ export function useNeighborhood() {
     [setGraph, setLoading, setError, getNeighborhoodOptions],
   );
 
+  const loadStarterScene = useCallback(
+    async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetchStarterScene();
+        const { nodes: newNodes, edges: newEdges } = responseToMaps(response);
+        setGraph(newNodes, newEdges, response.center_id, response.truncated, response.total_in_neighborhood);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load starter scene");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setGraph, setLoading, setError],
+  );
+
   const expandNode = useCallback(
     async (ciId: string) => {
       if (expandedNodeIds.has(ciId)) return;
@@ -63,5 +80,5 @@ export function useNeighborhood() {
     [nodes, edges, expandedNodeIds, mergeGraph, markExpanded, setLoading, setError, getNeighborhoodOptions],
   );
 
-  return { loadNeighborhood, expandNode };
+  return { loadNeighborhood, loadStarterScene, expandNode };
 }

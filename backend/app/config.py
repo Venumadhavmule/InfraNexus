@@ -47,6 +47,8 @@ class Settings(BaseSettings):
 
     # ETL
     ETL_SYNC_INTERVAL_MIN: int = 30
+    ETL_STATE_PATH: str = "./data/etl_state.json"
+    ETL_BOOTSTRAP_IF_EMPTY: bool = True
 
     # Graph Defaults
     MAX_NODES_DEFAULT: int = 500

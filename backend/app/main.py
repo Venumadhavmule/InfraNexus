@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+import uuid
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -72,7 +74,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         from etl.scheduler import ETLScheduler
         from etl.snow_client import SnowClient
 
-        state_mgr = ETLStateManager(redis)
+        state_mgr = ETLStateManager(redis, settings.ETL_STATE_PATH)
+        await state_mgr.recover_if_running()
         app.state.etl_state_manager = state_mgr
 
         snow = SnowClient(settings.SNOW_INSTANCE, settings.SNOW_USERNAME, settings.SNOW_PASSWORD)
@@ -85,6 +88,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         scheduler = ETLScheduler(runner, state_mgr, settings.ETL_SYNC_INTERVAL_MIN)
         await scheduler.start()
         app.state.etl_scheduler = scheduler
+
+        if settings.ETL_BOOTSTRAP_IF_EMPTY and not await kuzu.has_ci_data():
+            sync_id = uuid.uuid4().hex[:12]
+            await state_mgr.set_running(sync_id, "full")
+            asyncio.create_task(runner.run_full_sync(sync_id))
+            log.info("app.etl_bootstrap_scheduled", sync_id=sync_id)
     else:
         app.state.etl_state_manager = None
         app.state.etl_runner = None

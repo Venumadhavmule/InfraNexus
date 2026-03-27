@@ -120,6 +120,10 @@ export async function fetchGraphStats(): Promise<GraphStatsResponse> {
   return request<GraphStatsResponse>("/api/graph/stats");
 }
 
+export async function fetchStarterScene(maxNodes = 100): Promise<NeighborhoodResponse> {
+  return request<NeighborhoodResponse>(`/api/graph/starter?max_nodes=${maxNodes}`);
+}
+
 // ── Search Endpoints ───────────────────────────────────────
 
 export async function search(
