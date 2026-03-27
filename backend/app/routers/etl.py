@@ -77,6 +77,10 @@ async def get_status(
     state = await state_mgr.get_state()
     return ETLStatusResponse(
         status=SyncStatus(state.get("status", "idle")),
+        current_sync_id=state.get("sync_id"),
+        current_sync_type=state.get("sync_type"),
+        current_stage=state.get("current_stage"),
+        current_stage_started_at=state.get("current_stage_started_at"),
         last_sync_type=state.get("last_sync_type"),
         last_sync_timestamp=state.get("last_sync_timestamp"),
         last_sync_duration_seconds=state.get("last_sync_duration_seconds"),

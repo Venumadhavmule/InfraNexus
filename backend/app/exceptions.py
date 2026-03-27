@@ -143,6 +143,14 @@ class SnowTimeoutError(InfraNexusError):
         super().__init__("ServiceNow request timed out")
 
 
+class SnowResponseError(InfraNexusError):
+    status_code = 503
+    error_type = "snow_response_error"
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(f"ServiceNow returned an invalid response: {reason}")
+
+
 class ETLSyncFailedError(InfraNexusError):
     status_code = 500
     error_type = "etl_sync_failed"

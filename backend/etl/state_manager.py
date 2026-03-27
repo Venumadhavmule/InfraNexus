@@ -52,10 +52,22 @@ class ETLStateManager:
             "sync_id": sync_id,
             "sync_type": sync_type,
             "started_at": datetime.utcnow().isoformat(),
+            "current_stage": None,
+            "current_stage_started_at": None,
             "next_scheduled_sync": next_scheduled_sync,
         }
         await self._save_state(new_state)
         log.info("etl_state.running", sync_id=sync_id, sync_type=sync_type)
+
+    async def set_stage(self, sync_id: str, stage: str) -> None:
+        state = await self.get_state()
+        state.update({
+            "sync_id": sync_id,
+            "current_stage": stage,
+            "current_stage_started_at": datetime.utcnow().isoformat(),
+        })
+        await self._save_state(state)
+        log.info("etl_state.stage", sync_id=sync_id, stage=stage)
 
     async def set_completed(
         self,
@@ -75,6 +87,8 @@ class ETLStateManager:
             "last_sync_ci_count": ci_count,
             "last_sync_rel_count": rel_count,
             "last_sync_error": None,
+            "current_stage": None,
+            "current_stage_started_at": None,
         })
         await self._save_state(state)
         log.info(
@@ -90,6 +104,7 @@ class ETLStateManager:
         state.update({
             "status": "failed",
             "sync_id": None,
+            "last_sync_type": state.get("sync_type"),
             "last_sync_error": error,
             "last_sync_timestamp": datetime.utcnow().isoformat(),
         })

@@ -44,20 +44,20 @@ class ETLRunner:
         rel_count = 0
 
         try:
-            await self._broadcast("sync_started", {"sync_id": sync_id, "type": "full"})
+            await self._broadcast("sync_started", {"sync_id": sync_id, "sync_type": "full"})
 
             # 0. Reset tables to ensure a clean full sync (handles re-runs)
-            await self._broadcast("sync_progress", {"stage": "resetting_tables"})
+            await self._set_stage(sync_id, "resetting_tables")
             await self._loader.reset_for_full_sync()
 
             # 1. Fetch relationship types
-            await self._broadcast("sync_progress", {"stage": "fetching_rel_types"})
+            await self._set_stage(sync_id, "fetching_rel_types")
             rel_types = await self._snow.fetch_rel_types()
             type_map = {rt["sys_id"]: rt for rt in rel_types}
             log.info("etl.rel_types_loaded", count=len(type_map))
 
             # 2. Fetch and load all CIs
-            await self._broadcast("sync_progress", {"stage": "fetching_cis"})
+            await self._set_stage(sync_id, "fetching_cis")
             all_cis: list[dict[str, Any]] = []
             search_docs: list[dict[str, Any]] = []
 
@@ -71,11 +71,11 @@ class ETLRunner:
                     else:
                         log.warning("etl.ci_rejected", sys_id=raw.get("sys_id"), errors=errors)
 
-            await self._broadcast("sync_progress", {"stage": "loading_cis", "count": len(all_cis)})
+            await self._set_stage(sync_id, "loading_cis", count=len(all_cis))
             ci_count = await self._loader.bulk_load_cis(all_cis)
 
             # 3. Fetch and load all relationships
-            await self._broadcast("sync_progress", {"stage": "fetching_relationships"})
+            await self._set_stage(sync_id, "fetching_relationships")
             all_rels: list[dict[str, Any]] = []
 
             async for page in self._snow.fetch_relationships():
@@ -87,15 +87,15 @@ class ETLRunner:
                     else:
                         log.warning("etl.rel_rejected", errors=errors)
 
-            await self._broadcast("sync_progress", {"stage": "loading_relationships", "count": len(all_rels)})
+            await self._set_stage(sync_id, "loading_relationships", count=len(all_rels))
             rel_count = await self._loader.bulk_load_relationships(all_rels)
 
             # 4. Update degree counts
-            await self._broadcast("sync_progress", {"stage": "updating_degrees"})
+            await self._set_stage(sync_id, "updating_degrees")
             await self._loader.update_degree_counts()
 
             # 5. Index in Meilisearch
-            await self._broadcast("sync_progress", {"stage": "indexing_search"})
+            await self._set_stage(sync_id, "indexing_search")
             await self._indexer.batch_index(search_docs)
 
             # 6. Invalidate all caches
@@ -114,9 +114,15 @@ class ETLRunner:
             })
 
         except Exception as e:
+            state = await self._state.get_state()
             log.exception("etl.full_sync_failed", sync_id=sync_id)
             await self._state.set_failed(sync_id, str(e))
-            await self._broadcast("sync_error", {"sync_id": sync_id, "error": str(e)})
+            await self._broadcast("sync_error", {
+                "sync_id": sync_id,
+                "sync_type": "full",
+                "stage": state.get("current_stage"),
+                "error": str(e),
+            })
 
     async def run_incremental_sync(self, sync_id: str) -> None:
         t0 = time.monotonic()
@@ -124,7 +130,7 @@ class ETLRunner:
         rel_count = 0
 
         try:
-            await self._broadcast("sync_started", {"sync_id": sync_id, "type": "incremental"})
+            await self._broadcast("sync_started", {"sync_id": sync_id, "sync_type": "incremental"})
 
             cursor = await self._state.get_last_sync_cursor()
             if cursor is None:
@@ -137,7 +143,7 @@ class ETLRunner:
             type_map = {rt["sys_id"]: rt for rt in rel_types}
 
             # Fetch changed CIs
-            await self._broadcast("sync_progress", {"stage": "fetching_changed_cis"})
+            await self._set_stage(sync_id, "fetching_changed_cis")
             search_docs: list[dict[str, Any]] = []
 
             async for page in self._snow.fetch_cis(since=cursor):
@@ -153,7 +159,7 @@ class ETLRunner:
                         log.warning("etl.ci_rejected", sys_id=raw.get("sys_id"), errors=errors)
 
             # Fetch changed relationships
-            await self._broadcast("sync_progress", {"stage": "fetching_changed_relationships"})
+            await self._set_stage(sync_id, "fetching_changed_relationships")
             async for page in self._snow.fetch_relationships(since=cursor):
                 for raw in page:
                     transformed = RelationshipTransformer.transform(raw, type_map)
@@ -166,7 +172,9 @@ class ETLRunner:
 
             # Update degrees and index
             if ci_count > 0 or rel_count > 0:
+                await self._set_stage(sync_id, "updating_degrees")
                 await self._loader.update_degree_counts()
+                await self._set_stage(sync_id, "indexing_search")
                 await self._indexer.batch_index(search_docs)
                 await self._cache.invalidate_search()
 
@@ -183,9 +191,19 @@ class ETLRunner:
             })
 
         except Exception as e:
+            state = await self._state.get_state()
             log.exception("etl.incremental_sync_failed", sync_id=sync_id)
             await self._state.set_failed(sync_id, str(e))
-            await self._broadcast("sync_error", {"sync_id": sync_id, "error": str(e)})
+            await self._broadcast("sync_error", {
+                "sync_id": sync_id,
+                "sync_type": "incremental",
+                "stage": state.get("current_stage"),
+                "error": str(e),
+            })
+
+    async def _set_stage(self, sync_id: str, stage: str, **data: Any) -> None:
+        await self._state.set_stage(sync_id, stage)
+        await self._broadcast("sync_progress", {"sync_id": sync_id, "stage": stage, **data})
 
     async def _broadcast(self, event_type: str, data: dict[str, Any]) -> None:
         await self._ws.broadcast({"type": event_type, **data})
