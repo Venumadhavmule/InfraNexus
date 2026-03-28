@@ -1,4 +1,4 @@
-# InfraNexus — Disabled Features Reference
+# InfraNexus - Disabled Features Reference
 
 > **Purpose**: Documents all features that are currently disabled via feature toggles, why they were disabled, and exact steps to re-enable each one.
 
@@ -29,7 +29,7 @@
 - CI detail endpoint returns `CINotFoundError` (404) for any sys_id
 - Path endpoint returns `{ paths: [], exists: false }`
 - Stats endpoint returns all zeros
-- **The app still starts and responds to all API calls** — just with no graph data
+- **The app still starts and responds to all API calls** - just with no graph data
 
 ### How to Re-Enable
 1. Ensure Python `kuzu>=0.7.0` is installed (`pip install -r requirements.txt` covers this)
@@ -54,9 +54,9 @@
 - Stores ETL pipeline state (current sync status, last sync timestamp)
 
 ### What Happens When Disabled
-- **Cache always misses** — every request hits the database (or stub) directly
-- **Rate limiting is bypassed** — all requests are allowed (middleware gracefully skips)
-- **ETL state is not persisted** — ETL status always shows "idle"
+- **Cache always misses** - every request hits the database (or stub) directly
+- **Rate limiting is bypassed** - all requests are allowed (middleware gracefully skips)
+- **ETL state is not persisted** - ETL status always shows "idle"
 - No performance degradation beyond the missing cache layer
 
 ### How to Re-Enable
@@ -86,7 +86,7 @@
 - Search endpoint returns `{ hits: [], total: 0 }`
 - Suggest endpoint returns `{ suggestions: [] }`
 - The search UI on the frontend shows "No results found" for any query
-- **No errors** — the API responds normally, just with empty results
+- **No errors** - the API responds normally, just with empty results
 
 ### How to Re-Enable
 1. Start a Meilisearch instance:

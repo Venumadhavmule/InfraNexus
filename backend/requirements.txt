@@ -14,7 +14,7 @@ orjson>=3.10.0
 websockets>=14.0
 networkx>=3.4.0
 
-# === External Services (optional — disabled by default) ===
+# === External Services (optional - disabled by default) ===
 kuzu>=0.7.0
 redis[hiredis]>=5.2.0
 meilisearch-python-sdk>=3.8.0

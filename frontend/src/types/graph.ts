@@ -1,4 +1,4 @@
-// Graph data types — matches backend app/models/graph.py exactly
+// Graph data types - matches backend app/models/graph.py exactly
 
 export interface GraphNode {
   id: string; // sys_id (32 hex chars)

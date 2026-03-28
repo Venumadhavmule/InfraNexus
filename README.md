@@ -1,6 +1,6 @@
 # InfraNexus
 
-**ServiceNow CMDB Graph Visualizer** — Ingest 1M+ Configuration Items from ServiceNow, store them in a graph database, and explore relationships as an interactive real-time 3D force-directed graph.
+**ServiceNow CMDB Graph Visualizer** - Ingest 1M+ Configuration Items from ServiceNow, store them in a graph database, and explore relationships as an interactive real-time 3D force-directed graph.
 
 <img width="1710" height="874" alt="{F4A727CF-0229-4D4C-B31A-30E08AE8FE2D}" src="https://github.com/user-attachments/assets/6ccaa495-2c03-43fe-bd3e-9cf03bf19706" />
 
@@ -46,8 +46,8 @@
 | State | Zustand | 5 |
 | Data Fetching | SWR | 2 |
 | UI | shadcn/ui + Tailwind CSS | v4 |
-| ETL | Custom pipeline + APScheduler | — |
-| Infra | Docker Compose | — |
+| ETL | Custom pipeline + APScheduler | - |
+| Infra | Docker Compose | - |
 
 ## Prerequisites
 
@@ -108,7 +108,7 @@ curl -X POST http://localhost:8000/etl/sync \
   -d '{"type": "full"}'
 ```
 
-Or use the ETL status bar in the UI — progress streams live over WebSocket.
+Or use the ETL status bar in the UI - progress streams live over WebSocket.
 
 ### 4. Explore the graph
 
@@ -216,7 +216,7 @@ npm run build        # Production build
 ## Performance Notes
 
 - Max 2000 nodes served per neighborhood query (configurable)
-- Three.js is dynamically imported (`ssr: false`) — ~700KB never in initial bundle
+- Three.js is dynamically imported (`ssr: false`) - ~700KB never in initial bundle
 - All Cypher queries use parameterized values (no string interpolation)
 - Redis TTL: neighborhood 300s, CI detail 600s, stats 1800s
 - ETL uses APScheduler for incremental syncs (every 6h by default)

@@ -18,10 +18,10 @@ Extract CIs and relationships from ServiceNow CMDB, transform them into canonica
 - Relationship Types: `GET /api/now/table/cmdb_rel_type`
 
 ### Query Parameters
-- `sysparm_query` — Encoded query (e.g., `sys_updated_on>=2026-03-20`)
-- `sysparm_fields` — Comma-separated field list (always specify, never `*`)
-- `sysparm_limit` — Max records per page (use 1000)
-- `sysparm_offset` — Pagination offset
+- `sysparm_query` - Encoded query (e.g., `sys_updated_on>=2026-03-20`)
+- `sysparm_fields` - Comma-separated field list (always specify, never `*`)
+- `sysparm_limit` - Max records per page (use 1000)
+- `sysparm_offset` - Pagination offset
 
 ### Rate Limiting
 - ServiceNow allows ~30 requests/minute for table API

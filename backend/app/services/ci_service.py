@@ -66,7 +66,7 @@ class CIService:
         if not exists or exists[0].get("cnt", 0) == 0:
             raise CINotFoundError(ci_id)
 
-        # Timeline is a placeholder — ServiceNow audit history not yet loaded
+        # Timeline is a placeholder - ServiceNow audit history not yet loaded
         return CITimelineResponse(
             ci_id=ci_id,
             changes=[],

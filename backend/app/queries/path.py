@@ -1,4 +1,4 @@
-# All Cypher queries are parameterized constants — never dynamically constructed.
+# All Cypher queries are parameterized constants - never dynamically constructed.
 
 SHORTEST_PATH = """
 MATCH path = shortestPath(

@@ -68,7 +68,7 @@ cp .env.example .env.local
 
 ### Feature Toggles
 
-These flags control which external services are active. When set to `false`, a no-op stub is used automatically — the server starts and runs without the real service.
+These flags control which external services are active. When set to `false`, a no-op stub is used automatically - the server starts and runs without the real service.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -77,7 +77,7 @@ These flags control which external services are active. When set to `false`, a n
 | `MEILI_ENABLED` | `false` | Enable Meilisearch. When off: search falls back to Kuzu full-scan |
 | `ETL_ENABLED` | `false` | Enable ETL pipeline scheduler and manual trigger endpoint |
 
-### Minimum Config — Kuzu + ETL, no Redis/Meili
+### Minimum Config - Kuzu + ETL, no Redis/Meili
 
 ```env
 KUZU_ENABLED=true
@@ -102,9 +102,9 @@ CORS_ORIGINS=["http://localhost:3000"]
 | `REDIS_URL` | `redis://localhost:6379/0` | Redis connection URL |
 | `MEILI_URL` | `http://localhost:7700` | Meilisearch base URL |
 | `MEILI_MASTER_KEY` | `infranexus-dev-key` | Meilisearch master key |
-| `SNOW_INSTANCE` | — | ServiceNow instance URL (required when ETL enabled) |
-| `SNOW_USERNAME` | — | ServiceNow username |
-| `SNOW_PASSWORD` | — | ServiceNow password |
+| `SNOW_INSTANCE` | - | ServiceNow instance URL (required when ETL enabled) |
+| `SNOW_USERNAME` | - | ServiceNow username |
+| `SNOW_PASSWORD` | - | ServiceNow password |
 | `LOG_LEVEL` | `INFO` | Logging level (DEBUG, INFO, WARNING, ERROR) |
 | `LOG_FORMAT` | `json` | `json` (structured) or `console` (human-readable) |
 | `CORS_ORIGINS` | `["http://localhost:3000"]` | Allowed CORS origins (JSON array) |
@@ -120,7 +120,7 @@ CORS_ORIGINS=["http://localhost:3000"]
 ## Running the Server
 
 ```bash
-# Must use exactly 1 worker — Kuzu is single-process embedded
+# Must use exactly 1 worker - Kuzu is single-process embedded
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
 
 # Development with auto-reload
@@ -213,7 +213,7 @@ Stubs implement identical interfaces so code paths remain unchanged.
 ## Key Design Decisions
 
 - **Single uvicorn worker**: Kuzu is an embedded, single-writer database
-- **Parameterized Cypher only**: All queries in `queries/` module — no string interpolation
+- **Parameterized Cypher only**: All queries in `queries/` module - no string interpolation
 - **msgpack for Redis**: 2-3x smaller payload vs JSON
 - **COPY HEADER=TRUE PARALLEL=FALSE**: Required for Kuzu 0.11 with real-world CSV data containing newlines
 - **Relationship referential integrity**: Bulk-load filters out edges where either endpoint wasn't loaded

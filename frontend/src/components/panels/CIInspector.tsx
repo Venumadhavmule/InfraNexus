@@ -14,7 +14,15 @@ import {
 import { getNodeColor } from "@/lib/colorMap";
 
 export function CIInspector() {
-  const { ci, ciError, ciLoading } = useCI();
+  const { ci, ciError, ciLoading, syncPaused } = useCI();
+
+  if (syncPaused) {
+    return (
+      <div className="p-4 text-sm text-muted-foreground">
+        Full reload is refreshing the graph data. Inspector details will resume when the sync finishes.
+      </div>
+    );
+  }
 
   if (ciLoading) {
     return (
@@ -83,7 +91,7 @@ export function CIInspector() {
           {ci.cpu_count != null && <DetailRow label="CPUs" value={String(ci.cpu_count)} />}
           {ci.ram_mb != null && <DetailRow label="RAM" value={`${ci.ram_mb} MB`} />}
           {ci.disk_space_gb != null && <DetailRow label="Disk" value={`${ci.disk_space_gb} GB`} />}
-          {ci.location && <DetailRow label="Location" value={ci.location} />}
+          {ci.location && <DetailRow label="Location" value={formatDetailValue(ci.location)} />}
           {ci.department && <DetailRow label="Dept" value={ci.department} />}
           {ci.assigned_to && <DetailRow label="Assigned" value={ci.assigned_to} />}
           {ci.support_group && <DetailRow label="Support" value={ci.support_group} />}
@@ -110,6 +118,15 @@ export function CIInspector() {
       </div>
     </ScrollArea>
   );
+}
+
+function formatDetailValue(value: string): string {
+  const directValueMatch = value.match(/['\"]value['\"]:\s*['\"]([^'\"]+)['\"]/i);
+  if (directValueMatch?.[1]) {
+    return directValueMatch[1];
+  }
+
+  return value;
 }
 
 function DetailRow({

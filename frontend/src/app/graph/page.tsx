@@ -7,6 +7,7 @@ import { SearchBar } from "@/components/search/SearchBar";
 import { LeftPanel } from "@/components/panels/LeftPanel";
 import { RightPanel } from "@/components/panels/RightPanel";
 import { StatusBar } from "@/components/ui/StatusBar";
+import { GraphSkeleton } from "@/components/ui/GraphSkeleton";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { useNeighborhood } from "@/hooks/useNeighborhood";
@@ -26,6 +27,7 @@ export default function GraphPage() {
   const nodeCount = useGraphStore((s) => s.nodes.size);
   const loading = useGraphStore((s) => s.loading);
   const etlStatus = useETLStore((s) => s.status);
+  const currentStage = useETLStore((s) => s.currentStage);
   const lastSyncTimestamp = useETLStore((s) => s.lastSyncTimestamp);
   const setFromStatus = useETLStore((s) => s.setFromStatus);
   const handleWSEvent = useETLStore((s) => s.handleWSEvent);
@@ -183,6 +185,20 @@ export default function GraphPage() {
 
       {/* 3D Graph (fills remaining space) */}
       <CMDBGraph />
+
+      {nodeCount === 0 && (loading || etlStatus === "running") && (
+        <div className="absolute inset-0 z-10">
+          <GraphSkeleton />
+          <div className="pointer-events-none absolute left-1/2 top-[62%] -translate-x-1/2 text-center">
+            <p className="text-sm font-medium text-foreground">
+              {etlStatus === "running" ? "Syncing and shaping graph data" : "Loading graph scene"}
+            </p>
+            {currentStage && (
+              <p className="mt-1 text-xs text-muted-foreground">Current stage: {currentStage}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Status bar */}
       <StatusBar />

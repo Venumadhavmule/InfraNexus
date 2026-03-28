@@ -1,4 +1,4 @@
-// API response types — matches backend models exactly
+// API response types - matches backend models exactly
 
 export interface SearchHit {
   sys_id: string;
