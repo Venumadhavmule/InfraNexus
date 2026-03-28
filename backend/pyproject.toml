@@ -1,7 +1,7 @@
 [project]
 name = "infranexus-backend"
 version = "0.1.0"
-description = "InfraNexus — ServiceNow CMDB Graph Visualizer Backend"
+description = "InfraNexus - ServiceNow CMDB Graph Visualizer Backend"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0",

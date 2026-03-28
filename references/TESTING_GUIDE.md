@@ -1,4 +1,4 @@
-# InfraNexus — Testing Guide
+# InfraNexus - Testing Guide
 
 > Complete guide for testing the InfraNexus application end-to-end.
 
@@ -50,7 +50,7 @@ With the default `.env.local` (all services disabled), the backend starts instan
 cd frontend
 npm run dev
 ```
-Open http://localhost:3000 — the app loads with an empty graph canvas.
+Open http://localhost:3000 - the app loads with an empty graph canvas.
 
 ---
 
@@ -85,8 +85,8 @@ backend/tests/
 ```
 
 ### Key Test Fixtures (conftest.py)
-- `test_client` — FastAPI TestClient with stub managers
-- `fake_redis` — In-memory Redis mock via fakeredis
+- `test_client` - FastAPI TestClient with stub managers
+- `fake_redis` - In-memory Redis mock via fakeredis
 
 ---
 
@@ -140,9 +140,9 @@ npm test -- --grep "graphStore"
    ```
 2. Start backend: `uvicorn app.main:app --port 8000 --reload`
 3. Verify logs show: `stub_kuzu.initialized`, `stub_redis.initialized`, `stub_meili.initialized`
-4. Open http://localhost:8000/docs — Swagger UI loads
-5. Open http://localhost:8000/health — returns `{"status": "ok"}`
-6. Open http://localhost:8000/ready — returns `{"status": "ready"}` with dependency checks
+4. Open http://localhost:8000/docs - Swagger UI loads
+5. Open http://localhost:8000/health - returns `{"status": "ok"}`
+6. Open http://localhost:8000/ready - returns `{"status": "ready"}` with dependency checks
 
 ### Scenario 2: Frontend-Backend Communication
 **Goal**: Verify all API calls from frontend reach backend correctly.
@@ -210,7 +210,7 @@ curl http://localhost:8000/ready | python -m json.tool
 # Neighborhood (requires Kuzu + data)
 curl "http://localhost:8000/api/graph/neighborhood/abc123def456789...?hops=1&max_nodes=100"
 
-# Stats (works with empty DB — returns zeros)
+# Stats (works with empty DB - returns zeros)
 curl http://localhost:8000/api/graph/stats | python -m json.tool
 
 # Clusters
@@ -325,7 +325,7 @@ curl "http://localhost:8000/api/search?q=server&limit=5"
 - Ensure the virtual environment is activated
 - If kuzu fails to build: `pip install kuzu --no-build-isolation`
 
-### Backend won't start — "Address already in use"
+### Backend won't start - "Address already in use"
 ```bash
 # Find and kill the process on port 8000
 netstat -ano | findstr :8000
@@ -354,7 +354,7 @@ taskkill /PID <pid> /F
 - Check ServiceNow credentials in `.env.local`
 - Verify ServiceNow instance URL is correct (include `https://`)
 - Check ETL logs: `curl http://localhost:8000/api/etl/status`
-- Rate limit: ServiceNow allows ~1.4 req/s — large syncs take time
+- Rate limit: ServiceNow allows ~1.4 req/s - large syncs take time
 
 ### TypeScript build errors in frontend
 ```bash

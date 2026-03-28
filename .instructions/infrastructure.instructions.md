@@ -4,7 +4,7 @@ applyTo: "docker-compose*.yml,Dockerfile,Makefile,.env*"
 
 # InfraNexus Infrastructure Skill
 
-You are configuring the infrastructure for InfraNexus — a local-first Docker Compose application.
+You are configuring the infrastructure for InfraNexus - a local-first Docker Compose application.
 
 ## Services
 
@@ -18,12 +18,12 @@ You are configuring the infrastructure for InfraNexus — a local-first Docker C
 
 ## Rules
 
-1. **Backend runs 1 uvicorn worker** — Kuzu is embedded, single-process
-2. **Kuzu data volume**: `kuzu_data:/app/data/kuzu` — persist across restarts
+1. **Backend runs 1 uvicorn worker** - Kuzu is embedded, single-process
+2. **Kuzu data volume**: `kuzu_data:/app/data/kuzu` - persist across restarts
 3. **Redis**: 2GB maxmemory, allkeys-lru eviction, save every 60s if 1000+ changes
 4. **Meilisearch**: master key from env var, development mode for local
-5. **Health checks** on redis and meilisearch — backend depends on both
-6. **`.env.local`** holds ServiceNow credentials — NEVER committed
+5. **Health checks** on redis and meilisearch - backend depends on both
+6. **`.env.local`** holds ServiceNow credentials - NEVER committed
 7. **Total resource budget**: 16GB RAM, 4 cores minimum
 
 ## Environment Variables

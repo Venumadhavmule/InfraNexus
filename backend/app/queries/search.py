@@ -1,5 +1,5 @@
-# Kuzu-based text search queries — used when Meilisearch is disabled.
-# All queries are parameterized constants — never dynamically constructed.
+# Kuzu-based text search queries - used when Meilisearch is disabled.
+# All queries are parameterized constants - never dynamically constructed.
 
 _SEARCH_RETURN = """
     c.sys_id AS sys_id,

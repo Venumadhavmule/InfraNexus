@@ -68,7 +68,7 @@ src/
 ├── components/
 │   ├── graph/
 │   │   ├── CMDBGraph.tsx      # Dynamic-import wrapper (ssr: false)
-│   │   ├── GraphCanvas.tsx    # ForceGraph3D renderer — 8 geometry shapes
+│   │   ├── GraphCanvas.tsx    # ForceGraph3D renderer - 8 geometry shapes
 │   │   ├── GraphStats.tsx     # Node / edge count badges + truncated warning
 │   │   └── WebGLFallback.tsx  # detectWebGL() + graceful fallback UI
 │   ├── panels/
@@ -88,7 +88,7 @@ src/
 │   └── ui/
 │       ├── StatusBar.tsx         # Fixed bottom bar: counts + ETL pulse
 │       ├── GraphSkeleton.tsx     # Loading skeleton overlay
-│       ├── KeyboardHelp.tsx      # ? dialog — all 12 shortcuts
+│       ├── KeyboardHelp.tsx      # ? dialog - all 12 shortcuts
 │       └── ErrorFallback.tsx     # React class component error boundary
 ├── hooks/
 │   ├── useNeighborhood.ts    # loadNeighborhood (replace) + expandNode (merge)
@@ -125,7 +125,7 @@ src/
 | `uiStore` | Theme, layout mode, panel visibility, display toggles | Yes (localStorage) |
 | `etlStore` | ETL progress, sync history, last error, next schedule | No |
 
-`graphStore` uses `Map<string, T>` for O(1) node/edge lookup — required for smooth interaction at 2000 nodes.
+`graphStore` uses `Map<string, T>` for O(1) node/edge lookup - required for smooth interaction at 2000 nodes.
 
 ## Graph Merge Algorithm
 
@@ -194,7 +194,7 @@ Prevents the graph from "teleporting" when neighbour data is refreshed.
 ## Testing
 
 ```bash
-npm test          # vitest run — 30 tests across 5 files
+npm test          # vitest run - 30 tests across 5 files
 npm run test:watch
 ```
 

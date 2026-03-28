@@ -1,4 +1,4 @@
-# All Cypher queries are parameterized constants — never dynamically constructed.
+# All Cypher queries are parameterized constants - never dynamically constructed.
 
 CI_BY_ID = """
 MATCH (c:CI {sys_id: $ci_id})
