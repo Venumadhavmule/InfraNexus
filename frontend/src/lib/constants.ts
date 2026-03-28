@@ -8,6 +8,8 @@ export const DEGREE_THRESHOLD_DEFAULT = 0;
 export const DEBOUNCE_MS = 150;
 export const SEARCH_DEBOUNCE_MS = 250;
 export const CAMERA_FLY_DURATION_MS = 800;
+export const CAMERA_MIN_FOCUS_DISTANCE = 160;
+export const CAMERA_MAX_FOCUS_DISTANCE = 360;
 export const WS_RECONNECT_DELAY_MS = 3000;
 export const WS_MAX_RECONNECT_ATTEMPTS = 10;
 
@@ -24,6 +26,7 @@ export const HIERARCHICAL_LAYER_SPACING = 110;
 // ── Visual Thresholds ──────────────────────────────────────
 export const LABEL_VISIBILITY_DISTANCE = 300;
 export const NODE_HOVER_SCALE = 1.4;
+export const EDGE_OPACITY = 0.32;
 export const EDGE_PARTICLE_COUNT = 4;
 export const EDGE_PARTICLE_SPEED = 0.006;
 

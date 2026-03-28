@@ -12,6 +12,7 @@ const HOPS: HopDepth[] = [1, 2, 3];
 export function HopDepthControl() {
   const hops = useGraphStore((s) => s.hops);
   const centerId = useGraphStore((s) => s.centerId);
+  const selectedNodeId = useGraphStore((s) => s.selectedNodeId);
   const setHops = useGraphStore((s) => s.setHops);
   const { loadNeighborhood } = useNeighborhood();
   const [isPending, startTransition] = useTransition();
@@ -21,10 +22,13 @@ export function HopDepthControl() {
       return;
     }
 
+    // Prefer the actively selected node so hops always re-fetch the user-chosen CI,
+    // not the original search center (which may differ after in-canvas node clicks).
+    const targetId = selectedNodeId ?? centerId;
     setHops(nextHop);
-    if (centerId) {
+    if (targetId) {
       startTransition(() => {
-        void loadNeighborhood(centerId);
+        void loadNeighborhood(targetId);
       });
     }
   };
