@@ -231,4 +231,4 @@ npm run build        # Production build
 
 ## License
 
-MIT
+Apache 2.0
